@@ -45,7 +45,7 @@ class Accounts:
 
     def protect(self):
         g.identity = None
-        if request.endpoint in self.public_endpoints:
+        if request.routing_exception is not None or request.endpoint in self.public_endpoints:
             return
         if 'uid' in session:
             with self.store.connect() as db:

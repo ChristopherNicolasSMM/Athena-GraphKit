@@ -55,6 +55,15 @@ class HostedAccessTests(unittest.TestCase):
         return self.mutate(self.owner, '/compartilhamento/projeto/permissoes',
                            data={'principal': principal, 'target': target, 'role': role, 'diagram': diagram})
 
+    def test_untrusted_host_is_rejected_before_authentication(self):
+        self.app.config['TRUSTED_HOSTS'] = ['athena.example.test']
+        response = self.request(self.other, '/healthz')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('not trusted', response.get_json()['error'])
+        response = self.other.get('/healthz', base_url='https://athena.example.test')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {'status': 'ok'})
+
     def test_project_and_diagram_permissions_are_scoped(self):
         self.assertEqual(self.request(self.other, '/api/projects').status_code, 401)
         for client, user in ((self.owner,'owner'), (self.member,'member'), (self.other,'other')):
