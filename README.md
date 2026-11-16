@@ -285,7 +285,7 @@ Não há necessidade de alterar os projetos existentes para colaborar com o cód
 
 <div align="center">
 
-**Christopher Pont n.s.m Maurício**
+**Christopher N. S. M. Mauricio**
 
 *Athena GraphKit — Engineering diagrams. Shared understanding.*
 
@@ -294,7 +294,7 @@ Não há necessidade de alterar os projetos existentes para colaborar com o cód
 ## Licença
 
 O Athena GraphKit usa a [licença MIT](LICENSE). Mantenha o aviso de direitos
-autorais de **Christopher Pont n.s.m Maurício** e o aviso de permissão em
+autorais de **Christopher N. S. M. Mauricio** e o aviso de permissão em
 todas as cópias ou partes substanciais do software.
 
 ---
