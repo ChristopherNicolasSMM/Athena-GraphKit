@@ -1,0 +1,15 @@
+{% extends 'sharing_base.html' %}
+{% block title %}{{ item.title }}{% endblock %}
+{% block content %}
+<h1>{{ item.title }}</h1>
+<section id="diagramPreview" aria-live="polite"></section>
+<section><form method="post">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="revision" value="{{ revision }}">
+{% if level >= 2 %}<label for="title">Título</label><input id="title" name="title" required maxlength="120" value="{{ item.title }}">{% endif %}
+<label for="diagramCode">Código Mermaid</label>
+<textarea rows="12" id="diagramCode" name="code" maxlength="100000" {% if level < 2 %}readonly{% endif %}>{{ item.code }}</textarea>
+<p><button id="previewButton" type="button">Atualizar prévia</button> {% if level >= 2 %}<button>Salvar diagrama</button>{% endif %}</p>
+</form></section>
+<script src="{{ url_for('static',filename='vendor/mermaid/mermaid.min.js') }}"></script>
+<script src="{{ url_for('static',filename='shared_diagram.js') }}" defer></script>
+{% endblock %}

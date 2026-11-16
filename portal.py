@@ -1,4 +1,4 @@
-"""Athena GraphKit Portal v1.4.2. Local-only project/document/diagram editor."""
+"""Athena GraphKit Portal v1.4.2. Local and hosted project/document/diagram editor."""
 import base64
 import io
 import json
@@ -22,6 +22,7 @@ WORKSPACE = ROOT / 'workspace' / 'projects'
 WORKSPACE.mkdir(parents=True, exist_ok=True)
 app = Flask(__name__, template_folder=str(ROOT/'portal'/'templates'), static_folder=str(ROOT/'portal'/'static'))
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+studio = None
 PROJECT_WRITE_LOCK = threading.Lock()
 THEMES = ('corporativo', 'dark', 'sap_fiori')
 FORMATS = ('svg', 'png', 'pdf')
@@ -103,7 +104,11 @@ def default_project(pid='exemplo'):
     return {'id':pid,'title':'Arquitetura de Integração','theme':'dark','markdown':'# Arquitetura de Integração\n\nEste documento descreve o fluxo principal.\n\n{{diagram:fluxo}}\n','diagrams':[{'id':'fluxo','title':'Integração SAP','kind':'flowchart','code':DEFAULT,'nodes':[{'id':'CLK','label':'Portal de Compras','x':45,'y':80},{'id':'API','label':'API RAP','x':285,'y':80},{'id':'SAP','label':'SAP S/4HANA','x':525,'y':80}],'edges':[{'from':'CLK','to':'API','label':''},{'from':'API','to':'SAP','label':''}]}]}
 
 @app.get('/')
-def home(): return render_template('index.html')
+def home(): return render_template('index.html', hosted=studio is not None)
+
+@app.get('/healthz')
+def health():
+    return jsonify(status='ok')
 
 @app.get('/api/manuals')
 def list_manuals():
@@ -117,6 +122,9 @@ def read_manual(manual_id):
 
 @app.get('/api/projects')
 def list_projects():
+    if studio:
+        projects = [{'id': p['id'], 'title': p['title']} for p in studio.list()]
+        return jsonify(projects=sorted(projects, key=lambda p: p['title'].casefold()))
     projects=[]
     for p in WORKSPACE.glob('*.json'):
         try:
@@ -128,14 +136,23 @@ def list_projects():
 
 @app.get('/api/projects/<pid>/download')
 def download_project(pid):
-    path=project_path(pid)
-    if not path.is_file(): abort(404,'Projeto não encontrado')
-    data=validate_project(json.loads(path.read_text(encoding='utf-8')))
+    if studio:
+        data = studio.get(slug(pid))
+        data.pop('_access')
+    else:
+        path=project_path(pid)
+        if not path.is_file(): abort(404,'Projeto não encontrado')
+        data=validate_project(json.loads(path.read_text(encoding='utf-8')))
     return send_file(io.BytesIO(json.dumps(data,ensure_ascii=False,indent=2).encode('utf-8')),mimetype='application/json',as_attachment=True,download_name=f'{pid}.json')
 
 @app.post('/api/projects/import')
 def import_project():
     data=validate_project(payload())
+    if studio:
+        data.pop('_access', None)
+        data['id'] = 'projeto_' + uuid.uuid4().hex
+        studio.create(data)
+        return jsonify(id=data['id'], title=data['title']), 201
     # Imported projects receive a new ID if the name is already taken.
     pid=slug(data['id']); path=project_path(pid)
     if path.exists():
@@ -148,38 +165,56 @@ def import_project():
 def backup_projects():
     archive=io.BytesIO()
     with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
-        for path in sorted(WORKSPACE.glob('*.json')):
-            try:
-                data=validate_project(json.loads(path.read_text(encoding='utf-8')))
-                z.writestr('projects/'+path.name,json.dumps(data,ensure_ascii=False,indent=2))
-            except (BadRequest,ValueError,OSError):continue
+        if studio:
+            for data in studio.list():
+                z.writestr('projects/'+data['id']+'.json',json.dumps(data,ensure_ascii=False,indent=2))
+        else:
+            for path in sorted(WORKSPACE.glob('*.json')):
+                try:
+                    data=validate_project(json.loads(path.read_text(encoding='utf-8')))
+                    z.writestr('projects/'+path.name,json.dumps(data,ensure_ascii=False,indent=2))
+                except (BadRequest,ValueError,OSError):continue
         z.writestr('README.txt','Athena GraphKit v1.4.2 - backup de projetos JSON. Importe um projeto por vez no portal.\n')
     archive.seek(0)
     return send_file(archive,mimetype='application/zip',as_attachment=True,download_name='athena_projetos_backup.zip')
 
 @app.post('/api/projects')
 def create_project():
-    data=payload(); pid=slug(data.get('id') or 'projeto_'+uuid.uuid4().hex[:8]); path=project_path(pid)
-    if path.exists(): abort(409,'Projeto já existe')
-    obj=default_project(pid); obj['title']=str(data.get('title') or obj['title'])[:120]
-    validate_project(obj); write_project(path,obj,create=True)
+    data=payload()
+    pid=slug(data.get('id') or ('projeto_' + uuid.uuid4().hex))
+    obj=default_project(pid)
+    obj['title']=str(data.get('title') or obj['title'])[:120]
+    validate_project(obj)
+    if studio:
+        studio.create(obj)
+    else:
+        write_project(project_path(pid),obj,create=True)
     return jsonify(obj),201
+
 
 @app.get('/api/projects/<pid>')
 def get_project(pid):
+    if studio:
+        return jsonify(studio.get(slug(pid)))
     path=project_path(pid)
     if not path.exists(): abort(404,'Projeto não encontrado')
     return jsonify(json.loads(path.read_text(encoding='utf-8')))
 
 @app.put('/api/projects/<pid>')
 def save_project(pid):
-    data=validate_project(payload()); path=project_path(pid)
+    data=validate_project(payload())
     if data.get('id')!=pid: abort(400,'ID inconsistente')
-    write_project(path,data)
+    if studio:
+        studio.save(slug(pid),data)
+    else:
+        write_project(project_path(pid),data)
     return jsonify({'saved':pid})
 
 @app.delete('/api/projects/<pid>')
 def delete_project(pid):
+    if studio:
+        studio.delete(slug(pid))
+        return jsonify(deleted=pid)
     path=project_path(pid)
     if not path.exists(): abort(404,'Projeto não encontrado')
     path.unlink(); return jsonify({'deleted':pid})
@@ -197,6 +232,12 @@ def embedded_png(value):
     width = int.from_bytes(raw[16:20], "big")
     height = int.from_bytes(raw[20:24], "big")
     return 0 < width <= 1024 and 0 < height <= 1024
+
+
+def fetch_embedded_image(url, resource_type):
+    if not embedded_png(url):
+        raise ValueError('Recurso externo não permitido.')
+    return base64.b64decode(url.split(',',1)[1], validate=True)
 
 
 def svg_to_png(svg, theme='dark'):
@@ -236,7 +277,7 @@ def svg_to_png(svg, theme='dark'):
     scale=min(2.0,4500/max(width,height))
     try:
         cairosvg = load_cairosvg(ROOT)
-        return cairosvg.svg2png(bytestring=svg.encode('utf-8'),output_width=max(1,round(width*scale)),output_height=max(1,round(height*scale)),background_color='#0e1728' if theme=='dark' else '#ffffff')
+        return cairosvg.surface.PNGSurface.convert(bytestring=svg.encode('utf-8'),url_fetcher=fetch_embedded_image,output_width=max(1,round(width*scale)),output_height=max(1,round(height*scale)),background_color='#0e1728' if theme=='dark' else '#ffffff')
     except CairoUnavailable as exc:
         raise ValueError('Cairo indisponível: '+str(exc)) from exc
     except Exception as exc:
@@ -253,6 +294,8 @@ def export_png():
 def export_documentation():
     """Receive client-rendered PNG images and produce portable MD+images ZIP."""
     data=payload(); project=validate_project(data.get('project'))
+    if studio:
+        studio.get(project['id'])
     images=data.get('images')
     if not isinstance(images,dict): abort(400,'Imagens ausentes')
     markdown=project.get('markdown',''); diagram_map={d['id']:d for d in project.get('diagrams',[])}
@@ -283,21 +326,50 @@ def export_documentation():
 def render_graphviz():
     data=payload(); code=data.get('content',''); theme=data.get('theme','dark'); fmt=data.get('format','svg')
     if theme not in THEMES or fmt not in FORMATS or not isinstance(code,str) or len(code)>100000: abort(400,'Parâmetros inválidos')
+    if studio and code.count('\n') > 600: abort(400, 'Limite de 600 linhas no renderizador hospedado.')
     if not re.match(r'^\s*(flowchart|graph)\s+',code,re.I):
         return jsonify({'error':'Graphviz Core suporta flowchart/graph; outros tipos são renderizados via Mermaid.js no navegador.'}),422
-    target=ROOT/'saidas'/'portal'/uuid.uuid4().hex
-    target.parent.mkdir(parents=True,exist_ok=True)
     try:
-        result=AthenaGraphKit(tema=theme,formato=fmt).gerar_texto(code,target)
-        binary=result.caminho.read_bytes(); result.caminho.unlink(missing_ok=True)
+        with tempfile.TemporaryDirectory(prefix='athena-render-') as directory:
+            result=AthenaGraphKit(tema=theme,formato=fmt).gerar_texto(code,Path(directory)/'diagram')
+            binary=result.caminho.read_bytes()
     except (ValueError,OSError,RuntimeError) as exc: return jsonify({'error':str(exc)}),422
     return send_file(io.BytesIO(binary),mimetype={'svg':'image/svg+xml','png':'image/png','pdf':'application/pdf'}[fmt],as_attachment=True,download_name=f'athena_{theme}.{fmt}')
 
 @app.errorhandler(400)
+@app.errorhandler(403)
 @app.errorhandler(404)
 @app.errorhandler(409)
 @app.errorhandler(413)
 def error(e): return jsonify({'error':getattr(e,'description',str(e))}),e.code
+
+def configure_hosted(config, *, reset_sender=None):
+    """Enable the hosted mode once, before Flask starts serving requests."""
+    global studio
+    from athena_access import AccessStore, Accounts
+    from athena_access.admin import install_commands
+    from athena_access.delivery import smtp_delivery
+    from athena_access.studio import StudioProjects
+
+    app.secret_key = config['ATHENA_SECRET_KEY']
+    app.config.update(SESSION_COOKIE_SECURE=True, ACCOUNT_BRAND='Athena GraphKit')
+    if config.get('ATHENA_TRUSTED_HOST'):
+        app.config['TRUSTED_HOSTS'] = [config['ATHENA_TRUSTED_HOST']]
+    database = Path(config['ATHENA_DATABASE'])
+    if not database.is_absolute():
+        raise ValueError('ATHENA_DATABASE precisa indicar um caminho absoluto persistente.')
+    store = AccessStore(database)
+    Accounts(app, store, reset_sender if reset_sender is not None else smtp_delivery(config),
+             public_endpoints={'health'})
+    studio = StudioProjects(app, store, validate_project, slug)
+    install_commands(app, store, studio)
+    return app
+
+
+if os.getenv('ATHENA_CONFIG'):
+    with open(os.environ['ATHENA_CONFIG'], encoding='utf-8') as file:
+        configure_hosted(json.load(file))
+
 
 if __name__=='__main__':
     print('Athena GraphKit Portal: http://127.0.0.1:5000')

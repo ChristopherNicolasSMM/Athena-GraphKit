@@ -1,0 +1,20 @@
+{% extends 'sharing_base.html' %}
+{% block title %}Permissões{% endblock %}
+{% block content %}
+<h1>Permissões de {{ project.title }}</h1>
+<section><form method="post">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<label for="diagram">Recurso</label><select id="diagram" name="diagram"><option value="">Projeto inteiro</option>{% for diagram in diagrams %}<option value="{{ diagram.id }}">{{ diagram.title }}</option>{% endfor %}</select>
+<label for="principal">Tipo de destinatário</label><select id="principal" name="principal"><option value="user">Usuário</option><option value="group">Grupo</option><option value="organization">Organização</option></select>
+<label for="target">E-mail do usuário ou identificador do grupo ou da organização</label><input id="target" name="target" required maxlength="254">
+<label for="role">Permissão</label><select id="role" name="role"><option value="visualizar">Visualizar</option><option value="editar">Editar</option></select>
+<p><button>Salvar permissão</button></p>
+</form></section>
+<section><h2>Permissões concedidas</h2>
+<table><thead><tr><th>Recurso</th><th>Destinatário</th><th>Permissão</th><th>Ação</th></tr></thead><tbody>
+{% for grant in grants %}
+<tr><td>{{ 'Projeto' if grant.scope=='project' else grant.resource.split('/')[1] }}</td><td>{{ {'user':'Usuário','group':'Grupo','organization':'Organização'}[grant.principal] }} · {{ grant.label }}</td><td>{{ 'Editar' if grant.level == 2 else 'Visualizar' }}</td>
+<td><form method="post"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="role" value="remover"><input type="hidden" name="principal" value="{{ grant.principal }}"><input type="hidden" name="target" value="{{ grant.target }}"><input type="hidden" name="diagram" value="{{ grant.resource.split('/')[1] if grant.scope=='diagram' else '' }}"><button>Remover</button></form></td></tr>
+{% else %}<tr><td colspan="4">Nenhuma permissão concedida.</td></tr>{% endfor %}
+</tbody></table></section>
+{% endblock %}

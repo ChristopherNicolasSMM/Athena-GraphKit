@@ -1,4 +1,4 @@
-from graphviz import Digraph
+from graphviz import Digraph, nohtml
 
 
 def renderizar(diagrama, tema, destino, formato):
@@ -10,11 +10,11 @@ def renderizar(diagrama, tema, destino, formato):
 
     def adicionar_no(grafo, nome):
         dados = diagrama.nos[nome]
-        grafo.node(nome, label=dados['rotulo'], shape=dados['tipo'])
+        grafo.node(nome, label=nohtml(dados['rotulo']), shape=dados['tipo'])
 
     for chave, grupo in diagrama.grupos.items():
         with dot.subgraph(name=f'cluster_{chave}') as sub:
-            sub.attr(label=grupo['titulo'], **tema['cluster'])
+            sub.attr(label=nohtml(grupo['titulo']), **tema['cluster'])
             for nome in grupo['nos']:
                 if nome in nos_em_grupos:
                     raise ValueError(f'Nó {nome} pertence a mais de um subgraph')
@@ -24,7 +24,7 @@ def renderizar(diagrama, tema, destino, formato):
         if nome not in nos_em_grupos:
             adicionar_no(dot, nome)
     for origem, alvo, operador, rotulo in diagrama.arestas:
-        attrs = {'label': rotulo} if rotulo else {}
+        attrs = {'label': nohtml(rotulo)} if rotulo else {}
         if operador == '---':
             attrs['dir'] = 'none'
         elif operador == '<-->':

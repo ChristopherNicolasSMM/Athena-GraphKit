@@ -1,0 +1,11 @@
+{
+  "ATHENA_SECRET_KEY": "SUBSTITUA_PELA_CHAVE",
+  "ATHENA_DATABASE": "/home/SEU_USUARIO/athena-deploy/data/athena.sqlite3",
+  "ATHENA_TRUSTED_HOST": "SEU_USUARIO.pythonanywhere.com",
+  "ATHENA_PUBLIC_ORIGIN": "https://SEU_USUARIO.pythonanywhere.com",
+  "ATHENA_SMTP_HOST": "smtp.seu-provedor.com",
+  "ATHENA_SMTP_PORT": 587,
+  "ATHENA_SMTP_FROM": "athena@seu-dominio.com",
+  "ATHENA_SMTP_USER": "athena@seu-dominio.com",
+  "ATHENA_SMTP_PASSWORD": "SUBSTITUA_PELA_CREDENCIAL_SMTP"
+}

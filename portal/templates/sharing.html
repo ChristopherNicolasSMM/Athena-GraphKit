@@ -1,0 +1,7 @@
+{% extends 'sharing_base.html' %}
+{% block content %}
+<h1>Compartilhamento</h1>
+<section><h2>Projetos</h2>
+<ul>{% for project in projects %}<li><a href="/?projeto={{ project.id }}">{{ project.title }}</a> {% if project.id in owned %}<a href="{{ url_for('sharing.permissions',pid=project.id) }}">Permissões</a>{% endif %}</li>{% else %}<li>Nenhum projeto disponível.</li>{% endfor %}</ul></section>
+<section><h2>Diagramas compartilhados</h2><ul>{% for pid,did,title in diagrams %}<li><a href="{{ url_for('sharing.diagram',pid=pid,did=did) }}">{{ title }}</a></li>{% else %}<li>Nenhum diagrama compartilhado com você.</li>{% endfor %}</ul></section>
+{% endblock %}

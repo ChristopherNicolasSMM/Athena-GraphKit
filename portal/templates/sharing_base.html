@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Compartilhamento{% endblock %} · Athena GraphKit</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='sharing.css') }}">
+</head>
+<body><main>
+<nav><a href="/">Studio</a> <a href="{{ url_for('sharing.dashboard') }}">Compartilhamento</a>
+<form method="post" action="{{ url_for('accounts.logout') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button>Sair</button></form></nav>
+{% block content %}{% endblock %}
+</main></body></html>

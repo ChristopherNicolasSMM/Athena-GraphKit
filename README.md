@@ -297,3 +297,10 @@ documentação. Use `--cli` para geração em lote pela configuração local
 
 O workflow **Pacotes portáteis** prepara e testa os arquivos por plataforma.
 O manifesto e as licenças do runtime acompanham a distribuição.
+
+## Modo hospedado e colaboração
+
+Consulte o [deploy no PythonAnywhere](deploy/README.md) para configurar WSGI,
+atualização a cada dez minutos e logs. O [modelo de acesso](deploy/ACCESS.md)
+explica autenticação, organizações, grupos, permissões e como reaproveitar
+o módulo `athena_access` em outro aplicativo Flask.
