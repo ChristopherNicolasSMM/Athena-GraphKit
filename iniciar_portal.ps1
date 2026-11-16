@@ -30,7 +30,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Ambiente virtual invalido.' }
 
 if (-not $SkipInstall) {
     Write-Host 'Verificando dependencias Python...'
-    & $python -c 'import importlib.metadata as m; [m.version(x) for x in ("Flask","graphviz","CairoSVG")]'
+    & $python -c 'import importlib.metadata as m; [m.version(x) for x in ("Flask","graphviz","CairoSVG","markdown-it-py")]'
     if ($LASTEXITCODE -ne 0) {
         Write-Host 'Instalando dependencias no venv (pode exigir acesso ao PyPI)...'
         & $python -m pip install -r $req

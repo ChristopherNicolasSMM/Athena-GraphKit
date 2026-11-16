@@ -9,6 +9,13 @@
 - C4Context: arquitetura de sistemas (Mermaid experimental).
 - BPMN simplificado: símbolos e fluxos visuais, não exportação BPMN XML.
 
+## Organizar o diagrama
+
+1. Abra a aba **Construtor visual** e arraste os elementos para as posições desejadas.
+2. Use **Grade**, ao lado dos controles de zoom, para mostrar ou ocultar os pontos do fundo.
+3. Clique em **Salvar projeto**. As posições e a preferência de grade ficam armazenadas por diagrama.
+4. Ao recarregar a página, o Studio reabre o projeto e o diagrama selecionados, se ainda estiverem disponíveis.
+
 ## Exemplo de fluxo
 
 ```mermaid

@@ -61,6 +61,18 @@ class HostedAccessTests(unittest.TestCase):
         return self.mutate(self.owner, '/compartilhamento/projeto/permissoes',
                            data={'principal': principal, 'target': target, 'role': role, 'diagram': diagram})
 
+    def test_manuals_render_markdown(self):
+        self.assertEqual(self.login(self.owner, 'owner').status_code, 302)
+        manuals = self.request(self.owner, '/api/manuals').get_json()['manuals']
+        self.assertIn({'id': '09_faq', 'title': 'Perguntas frequentes (FAQ)'}, manuals)
+        mcp = self.request(self.owner, '/api/manuals/07_mcp_e_backup').get_json()
+        self.assertIn('**Backup ZIP**', mcp['markdown'])
+        self.assertIn('<strong>Backup ZIP</strong>', mcp['html'])
+        self.assertIn('<code>stdio</code>', mcp['html'])
+        self.assertIn('<pre><code class="language-bash">', mcp['html'])
+        faq = self.request(self.owner, '/api/manuals/09_faq').get_json()
+        self.assertIn('<table>', faq['html'])
+
     def test_language_selection_persists_across_account_pages(self):
         response = self.request(self.other, '/conta/login?lang=en')
         self.assertIn(b'<html lang="en">', response.data)

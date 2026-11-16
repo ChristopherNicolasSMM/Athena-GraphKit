@@ -253,7 +253,8 @@ Abra **Manuais** no cabeçalho do portal ou consulte diretamente os arquivos da 
 | [`05_atalhos.md`](manuais/05_atalhos.md) | Atalhos e edição visual |
 | [`06_documentos_e_c4.md`](manuais/06_documentos_e_c4.md) | Documentos e arquitetura C4 |
 | [`07_mcp_e_backup.md`](manuais/07_mcp_e_backup.md) | MCP e portabilidade |
-| [`08_idiomas_e_temas.md`](manuais/08_idiomas_e_temas.md) | i18n e personalização |
+| [`08_idiomas_e_temas.md`](manuais/08_idiomas_e_temas.md) | Idioma e aparência |
+| [`09_faq.md`](manuais/09_faq.md) | Salvamento, compartilhamento e dúvidas frequentes |
 
 **Documentação oficial:** [Markdown Guide](https://www.markdownguide.org/) · [Mermaid](https://mermaid.js.org/) · [Mermaid Live](https://mermaid.live/) · [Graphviz DOT](https://graphviz.org/doc/info/lang.html) · [Graphviz Attributes](https://graphviz.org/doc/info/attrs.html) · [Python Graphviz](https://graphviz.readthedocs.io/) · [Flask](https://flask.palletsprojects.com/) · [BPMN 2.0](https://www.omg.org/spec/BPMN/2.0.2/)
 

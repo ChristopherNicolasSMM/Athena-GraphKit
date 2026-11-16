@@ -124,3 +124,14 @@ body[data-ui-theme="light"] .account-email { color: #38536c; border-color: #b7cb
 
 .canvas-wrap.grid-hidden { background-image: none; }
 #toggleCanvasGrid[aria-pressed="true"] { background: #236c91; color: #fff; }
+
+#manualList button[aria-current="true"]{border-color:#29a7d8;font-weight:700}
+#manualContent{min-width:0;overflow-wrap:anywhere}
+#manualContent code{background:#e9eff6;border-radius:4px;padding:.12em .3em}
+#manualContent pre code{padding:0;background:none}
+#manualContent pre{white-space:pre;overflow-wrap:normal}
+#manualContent a{color:#105d96;text-decoration:underline}
+#manualContent table{border-collapse:collapse}
+#manualContent th,#manualContent td{padding:.45em .65em;border:1px solid #bccbda;text-align:left}
+#manualContent th{background:#e9eff6}
+@media(max-width:600px){.manual-dialog{min-width:0}.manual-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}#manualList{max-height:24vh}}

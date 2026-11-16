@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from werkzeug.exceptions import BadRequest
 from flask import Flask, abort, jsonify, render_template, request, send_file
+from markdown_it import MarkdownIt
 from athena import AthenaGraphKit, __version__
 
 ROOT = Path(__file__).resolve().parent
@@ -29,6 +30,7 @@ FORMATS = ('svg', 'png', 'pdf')
 KINDS = ('flowchart', 'sequence', 'usecase', 'bpmn', 'c4', 'er', 'class')
 MANUALS = ROOT / 'manuais'
 MANUALS.mkdir(exist_ok=True)
+MANUAL_MARKDOWN = MarkdownIt('commonmark', {'html': False}).enable('table')
 DEFAULT = '''flowchart LR
     CLK[Portal de Compras] --> API[API RAP]
     API --> SAP[(SAP S/4HANA)]'''
@@ -113,13 +115,19 @@ def health():
 
 @app.get('/api/manuals')
 def list_manuals():
-    return jsonify({'manuals':[{'id':p.stem,'title':p.stem.replace('_',' ').title()} for p in sorted(MANUALS.glob('*.md'))]})
+    manuals = []
+    for path in sorted(MANUALS.glob('*.md')):
+        with path.open(encoding='utf-8') as source:
+            title = source.readline().strip().removeprefix('# ')
+        manuals.append({'id': path.stem, 'title': title or path.stem})
+    return jsonify(manuals=manuals)
 
 @app.get('/api/manuals/<manual_id>')
 def read_manual(manual_id):
     path=MANUALS/(slug(manual_id)+'.md')
     if not path.is_file(): abort(404,'Manual não encontrado')
-    return jsonify({'id':manual_id,'markdown':path.read_text(encoding='utf-8')})
+    markdown = path.read_text(encoding='utf-8')
+    return jsonify(id=manual_id, markdown=markdown, html=MANUAL_MARKDOWN.render(markdown))
 
 @app.get('/api/projects')
 def list_projects():

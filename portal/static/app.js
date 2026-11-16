@@ -288,7 +288,37 @@ function setUiTheme(theme){theme=theme==='light'?'light':'dark';document.body.da
 const accountLanguage=document.cookie.match(/(?:^|;\s*)athena_lang=(pt|en)(?:;|$)/)?.[1];
 $('uiLanguage').value=(csrfToken&&accountLanguage)||localStorage.getItem('athena.ui.lang')||'pt';$('uiTheme').value=localStorage.getItem('athena.ui.theme')||'dark';setUiLanguage($('uiLanguage').value);setUiTheme($('uiTheme').value);
 $('uiLanguage').addEventListener('change',e=>setUiLanguage(e.target.value));$('uiTheme').addEventListener('change',e=>setUiTheme(e.target.value));
-$('openManuals').onclick=async()=>{try{const list=await api('/api/manuals');const host=$('manualList');host.replaceChildren();for(const manual of list.manuals){const b=document.createElement('button');b.textContent=manual.title;b.onclick=async()=>{const doc=await api('/api/manuals/'+manual.id);$('manualTitle').textContent=manual.title;$('manualContent').innerHTML=simpleMd(doc.markdown)};host.append(b)}$('manualDialog').showModal();if(host.firstChild)host.firstChild.click()}catch(e){notice(e.message,true)}};
+$('openManuals').onclick=async()=>{
+  const dialog=$('manualDialog'), host=$('manualList'), content=$('manualContent');
+  try{
+    const {manuals}=await api('/api/manuals');
+    host.replaceChildren();
+    content.replaceChildren();
+    if(!dialog.open)dialog.showModal();
+    let selected;
+    for(const manual of manuals){
+      const button=document.createElement('button');
+      button.textContent=manual.title;
+      button.onclick=async()=>{
+        selected?.removeAttribute('aria-current');
+        selected=button;
+        button.setAttribute('aria-current','true');
+        content.textContent='Carregando…';
+        try{
+          const doc=await api('/api/manuals/'+encodeURIComponent(manual.id));
+          if(selected!==button || !button.isConnected)return;
+          content.innerHTML=doc.html;
+          content.scrollTop=0;
+        }catch(e){
+          if(selected===button && button.isConnected)content.textContent=e.message;
+        }
+      };
+      host.append(button);
+    }
+    if(host.firstChild)host.firstChild.click();
+    else content.textContent='Nenhum manual disponível.';
+  }catch(e){notice(e.message,true)}
+};
 $('closeManuals').onclick=()=>$('manualDialog').close();
 
 // Athena v4.0: portable project backup and import.
