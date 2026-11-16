@@ -260,6 +260,21 @@ Abra **Manuais** no cabeçalho do portal ou consulte diretamente os arquivos da 
 
 A [referência técnica do Studio](docs/TECHNICAL.md) descreve a persistência do layout, a API e a renderização dos manuais.
 
+## Skills para IA: uso, desenvolvimento e operação
+
+O Athena oferece quatro Skills distribuíveis em `plugin/skills/`, declaradas em `plugin/plugin.json`:
+
+| Skill | Para que serve |
+| --- | --- |
+| `athena-graphkit` | Gerar diagramas e documentação através do motor compatível |
+| `athena-user` | Orientar usuários em projetos, editor, manuais e exportação |
+| `athena-developer` | Compreender a arquitetura, investigar o código e propor alterações |
+| `athena-operations` | Diagnosticar e operar ambientes locais, portáteis, hospedados e MCP |
+
+**Governança:** `AGENTS.md` orienta agentes a analisar a arquitetura e apresentar decisões, alternativas, riscos e testes **antes de qualquer modificação**, solicitando aprovação explícita do arquiteto antes de agir. Consulte [Knowledge Skills](docs/KNOWLEDGE_SKILLS.md) e a [referência técnica](docs/TECHNICAL.md) para responsabilidades, fluxos e distribuição.
+
+A instalação de uma Skill/plugin depende das capacidades do cliente de IA. O pacote no GitHub é público (licença MIT), mas não se instala automaticamente no ChatGPT nem conecta o MCP sem configuração.
+
 ## Testes e diagnóstico
 
 ```powershell
