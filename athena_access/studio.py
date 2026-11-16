@@ -25,6 +25,7 @@ class StudioProjects:
             db.execute(PROJECTS)
         bp = Blueprint('sharing', __name__, url_prefix='/compartilhamento')
         bp.add_url_rule('/', 'dashboard', self.dashboard)
+        bp.add_url_rule('/perfil', 'profile', self.profile)
         bp.add_url_rule('/<pid>/permissoes', 'permissions', self.permissions, methods=['GET', 'POST'])
         bp.add_url_rule('/<pid>/diagramas/<did>', 'diagram', self.diagram, methods=['GET', 'POST'])
         app.register_blueprint(bp)
@@ -124,7 +125,26 @@ class StudioProjects:
                     if item:
                         diagrams.append((pid, did, item['title']))
             owned = {row[0] for row in db.execute("SELECT id FROM studio_projects WHERE owner=?", (self.uid,))}
-        return render_template('sharing.html', projects=self.list(), diagrams=diagrams, owned=owned)
+        projects = self.list()
+        return render_template('sharing.html', diagrams=diagrams,
+                               own_projects=[p for p in projects if p['id'] in owned],
+                               shared_projects=[p for p in projects if p['id'] not in owned])
+
+    def profile(self):
+        with self.store.connect() as db:
+            profile = db.execute('SELECT email,email_verified FROM users WHERE id=?', (self.uid,)).fetchone()
+            organizations = db.execute("""
+                SELECT o.name FROM organizations o JOIN organization_members m ON m.organization=o.id
+                WHERE m.user=? ORDER BY o.name COLLATE NOCASE
+            """, (self.uid,)).fetchall()
+            groups = db.execute("""
+                SELECT g.name,o.name AS organization FROM groups g
+                JOIN organizations o ON o.id=g.organization
+                JOIN group_members gm ON gm.team=g.id
+                JOIN organization_members om ON om.organization=o.id AND om.user=gm.user
+                WHERE gm.user=? ORDER BY o.name COLLATE NOCASE,g.name COLLATE NOCASE
+            """, (self.uid,)).fetchall()
+        return render_template('profile.html', profile=profile, organizations=organizations, groups=groups)
 
     def diagram(self, pid, did):
         pid, did = self.slug(pid), self.slug(did)

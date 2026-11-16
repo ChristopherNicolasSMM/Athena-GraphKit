@@ -6,7 +6,7 @@ import re
 import tempfile
 import zipfile
 from pathlib import Path
-from athena import AthenaGraphKit
+from athena import AthenaGraphKit, __version__
 
 THEMES = ('dark', 'corporativo', 'sap_fiori')
 FORMATS = ('svg', 'png', 'pdf')
@@ -48,7 +48,7 @@ def prepare_documentation(markdown: str, images: dict[str,str]) -> dict:
             z.writestr(f'imagens/{did}.png',raw)
             markdown=markdown.replace('{{diagram:'+did+'}}',f'![{did}](imagens/{did}.png)')
         z.writestr('documento_athena.md',markdown)
-        z.writestr('manifest.json',json.dumps({'generator':'Athena GraphKit','version':'1.4.2','images':markers},ensure_ascii=False))
+        z.writestr('manifest.json',json.dumps({'generator':'Athena GraphKit','version':__version__,'images':markers},ensure_ascii=False))
     return {'filename':'athena_documentacao.zip','mime_type':'application/zip','base64':base64.b64encode(archive.getvalue()).decode('ascii')}
 
 def main():

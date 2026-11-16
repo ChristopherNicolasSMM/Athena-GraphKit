@@ -50,3 +50,83 @@
 
 /* Athena GraphKit brand identity */
 .brand{gap:10px;flex-shrink:0}.brand-art{display:block;width:205px;height:55px;overflow:hidden;border-radius:5px}.brand-art img{display:block;width:100%;height:100%;object-fit:contain}.brand-tagline{font-size:10px;color:#9ab9d1;max-width:130px;line-height:1.25}body[data-ui-theme="light"] .brand-tagline{color:#38536c}@media(max-width:1050px){.brand-tagline{display:none}.brand-art{width:165px}}
+
+.studio-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid #35506c;
+  border-radius: 7px;
+  background: #1b2d45;
+  color: #e0ecf9;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.studio-action:hover { background: #294565; }
+.studio-action[hidden] { display: none; }
+.studio-action:focus-visible,
+.account-panel :is(a,button):focus-visible { outline: 2px solid #46b9e6; outline-offset: 3px; }
+.account-menu { position: relative; flex: 0 0 auto; z-index: 20; }
+.account-menu summary { list-style: none; padding: 6px 10px; }
+.account-menu summary::-webkit-details-marker { display: none; }
+.account-avatar {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #245a7c;
+  color: #f2f9ff;
+  font-weight: 700;
+}
+.account-chevron {
+  width: 7px;
+  height: 7px;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: translateY(-2px) rotate(45deg);
+}
+.account-menu[open] .account-chevron { transform: translateY(2px) rotate(225deg); }
+.account-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(260px, calc(100vw - 28px));
+  padding: 8px;
+  background: #111d30;
+  border: 1px solid #35506c;
+  border-radius: 9px;
+  box-shadow: 0 10px 30px #0006;
+}
+.account-email {
+  margin: 0 0 5px;
+  padding: 7px 8px 10px;
+  border-bottom: 1px solid #35506c;
+  color: #a9c5db;
+  overflow-wrap: anywhere;
+}
+.account-panel a, .account-panel button {
+  display: block;
+  width: 100%;
+  padding: 9px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+.account-panel a:hover, .account-panel button:hover { background: #1b2d45; }
+body[data-ui-theme="light"] .studio-action,
+body[data-ui-theme="light"] .account-panel { background: #f5f9fe; color: #173753; border-color: #b7cbe1; }
+body[data-ui-theme="light"] .studio-action:hover,
+body[data-ui-theme="light"] .account-panel :is(a,button):hover { background: #dbeaf8; }
+body[data-ui-theme="light"] .account-email { color: #38536c; border-color: #b7cbe1; }
+@media (max-width: 1200px) {
+  header { height: auto; min-height: 68px; flex-wrap: wrap; gap: 8px 12px; padding: 8px 14px; }
+  header #notice { max-width: 20ch; margin-left: auto; }
+  .account-menu { margin-left: auto; }
+}

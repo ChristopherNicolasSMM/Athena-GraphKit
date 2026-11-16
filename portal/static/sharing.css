@@ -4,3 +4,25 @@ nav form{margin-left:auto}a{color:#91ddff}section{background:#172235;border:1px 
 label{display:block;margin-top:.75rem}input,textarea,select,button{font:inherit;padding:.45rem .65rem;border:1px solid #64829e;border-radius:.35rem}
 input,textarea,select{max-width:100%;background:#101827}textarea{display:block;width:100%;box-sizing:border-box;font-family:monospace}button{background:#91ddff;color:#101827;cursor:pointer}
 table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:.5rem;border-bottom:1px solid #344b67}#diagramPreview{overflow:auto;text-align:center}#diagramPreview svg{max-width:100%;height:auto}
+
+nav { flex-wrap: wrap; }
+.sharing-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .42rem .68rem;
+  border: 1px solid #35506c;
+  border-radius: .45rem;
+  background: #1b2d45;
+  color: #e0ecf9;
+  text-decoration: none;
+  font-size: .9rem;
+  white-space: nowrap;
+}
+.sharing-action:hover { background: #294565; }
+.sharing-action:focus-visible { outline: 2px solid #46b9e6; outline-offset: 3px; }
+.project-share-row { margin: .35rem 0; }
+.project-share-row .sharing-action { margin-left: .35rem; }
+.profile-details { display: grid; grid-template-columns: minmax(8rem,auto) 1fr; gap: .5rem 1rem; }
+.profile-details dt { color: #a9c5db; }
+.profile-details dd { margin: 0; overflow-wrap: anywhere; }

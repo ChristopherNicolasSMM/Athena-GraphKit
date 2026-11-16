@@ -196,7 +196,7 @@ loadProjects(new URLSearchParams(location.search).get('projeto')).catch(e=>notic
 $('newByType').onclick=()=>{$('newDiagramKind').value=$('diagramType').value;$('newDiagramDialog').showModal()};
 
 // v3.0: persistent interface settings and Markdown manual viewer.
-const uiStrings={pt:{'newProject':'Novo projeto','deleteProject':'Excluir','saveProject':'Salvar projeto','exportDocumentation':'Exportar documentação','addDiagram':'Novo diagrama','newByType':'Criar deste tipo','renameDiagram':'Renomear diagrama','deleteDiagram':'Excluir diagrama','undo':'Desfazer','redo':'Refazer','connect':'Conectar','removeSelected':'Remover seleção','syncCode':'Gerar Mermaid','repairCode':'Reparar legado','importCode':'Importar código → Visual','refreshPreview':'Atualizar prévia','downloadSvg':'SVG','downloadPng':'PNG','openManuals':'Manuais','backupProjects':'Backup ZIP','downloadProject':'Exportar projeto','importProject':'Importar projeto'},en:{'newProject':'New project','deleteProject':'Delete','saveProject':'Save project','exportDocumentation':'Export documentation','addDiagram':'New diagram','newByType':'Create this type','renameDiagram':'Rename diagram','deleteDiagram':'Delete diagram','undo':'Undo','redo':'Redo','connect':'Connect','removeSelected':'Remove selection','syncCode':'Generate Mermaid','repairCode':'Repair legacy','importCode':'Import code → Visual','refreshPreview':'Refresh preview','downloadSvg':'SVG','downloadPng':'PNG','openManuals':'Manuals','backupProjects':'Backup ZIP','downloadProject':'Export project','importProject':'Import project'}};
+const uiStrings={pt:{studioSharing:'Compartilhamento',projectPermissions:'Permissões',accountMenuLabel:'Minha conta',accountProfileLink:'Meu perfil',accountSharedLink:'Projetos compartilhados',accountLogout:'Encerrar sessão','newProject':'Novo projeto','deleteProject':'Excluir','saveProject':'Salvar projeto','exportDocumentation':'Exportar documentação','addDiagram':'Novo diagrama','newByType':'Criar deste tipo','renameDiagram':'Renomear diagrama','deleteDiagram':'Excluir diagrama','undo':'Desfazer','redo':'Refazer','connect':'Conectar','removeSelected':'Remover seleção','syncCode':'Gerar Mermaid','repairCode':'Reparar legado','importCode':'Importar código → Visual','refreshPreview':'Atualizar prévia','downloadSvg':'SVG','downloadPng':'PNG','openManuals':'Manuais','backupProjects':'Backup ZIP','downloadProject':'Exportar projeto','importProject':'Importar projeto'},en:{studioSharing:'Sharing',projectPermissions:'Permissions',accountMenuLabel:'My account',accountProfileLink:'My profile',accountSharedLink:'Shared projects',accountLogout:'Sign out','newProject':'New project','deleteProject':'Delete','saveProject':'Save project','exportDocumentation':'Export documentation','addDiagram':'New diagram','newByType':'Create this type','renameDiagram':'Rename diagram','deleteDiagram':'Delete diagram','undo':'Undo','redo':'Redo','connect':'Connect','removeSelected':'Remove selection','syncCode':'Generate Mermaid','repairCode':'Repair legacy','importCode':'Import code → Visual','refreshPreview':'Refresh preview','downloadSvg':'SVG','downloadPng':'PNG','openManuals':'Manuals','backupProjects':'Backup ZIP','downloadProject':'Export project','importProject':'Import project'}};
 const uiLabels={pt:['Projeto','Nome','Tema','DIAGRAMAS','TIPO DO DIAGRAMA','BIBLIOTECA DE COMPONENTES','Construtor visual','Código Mermaid','Prévia','Documento Markdown'],en:['Project','Name','Theme','DIAGRAMS','DIAGRAM TYPE','COMPONENT LIBRARY','Visual builder','Mermaid code','Preview','Markdown document']};
 // Extra static UI translations. Preserve the original text for reversible switching.
 const extraUiEnglish={
@@ -261,3 +261,15 @@ setCanvasZoom(1);
 
 /* Athena brand lockup follows portal theme */
 (function(){const logo=document.getElementById("brandLogo");if(!logo)return;const apply=()=>{const light=document.body.dataset.uiTheme==="light";logo.src="/static/branding/athena-logo-"+(light?"light":"dark")+".png"};apply();new MutationObserver(apply).observe(document.body,{attributes:true,attributeFilter:["data-ui-theme"]});})();
+
+const accountMenu = document.querySelector('.account-menu');
+if (accountMenu) {
+  document.addEventListener('click', event => {
+    if (accountMenu.open && !accountMenu.contains(event.target)) accountMenu.open = false;
+  });
+  accountMenu.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !accountMenu.open) return;
+    accountMenu.open = false;
+    accountMenu.querySelector('summary').focus();
+  });
+}

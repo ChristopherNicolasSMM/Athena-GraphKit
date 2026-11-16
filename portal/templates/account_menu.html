@@ -1,0 +1,16 @@
+<details class="account-menu">
+  <summary class="studio-action">
+    <span class="account-avatar" aria-hidden="true">{{ g.identity.email[0]|upper }}</span>
+    <span id="accountMenuLabel">Minha conta</span>
+    <span class="account-chevron" aria-hidden="true"></span>
+  </summary>
+  <div class="account-panel">
+    <p class="account-email">{{ g.identity.email }}</p>
+    <a id="accountProfileLink" href="{{ url_for('sharing.profile') }}">Meu perfil</a>
+    <a id="accountSharedLink" href="{{ url_for('sharing.dashboard', _anchor='recebidos') }}">Projetos compartilhados</a>
+    <form method="post" action="{{ url_for('accounts.logout') }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      <button id="accountLogout" type="submit">Encerrar sessão</button>
+    </form>
+  </div>
+</details>

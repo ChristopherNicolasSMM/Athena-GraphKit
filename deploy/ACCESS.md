@@ -27,7 +27,9 @@ O acesso isolado a um diagrama fica restrito à página desse diagrama.
 Ao salvar, a revisão precisa coincidir com a que estava aberta.
 Uma aba desatualizada recebe HTTP 409.
 
-Use **Compartilhamento** no Studio para encontrar diagramas recebidos.
+Use **Compartilhamento** no Studio para encontrar projetos e diagramas
+recebidos. O menu **Minha conta** também abre os projetos compartilhados,
+o perfil com os seus vínculos ou o encerramento da sessão.
 Em um projeto próprio, use **Permissões** para compartilhar com uma conta
 por e-mail ou com grupo/organização por identificador. Use **Remover** para
 revogar a concessão. A pessoa pode continuar tendo acesso por outro vínculo.

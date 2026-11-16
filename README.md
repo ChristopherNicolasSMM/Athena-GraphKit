@@ -11,7 +11,7 @@
 
 **Do código à arquitetura visual. Da arquitetura à documentação compartilhada.**
 
-[![Version](https://img.shields.io/badge/version-1.4.2-52c7ef?style=for-the-badge)](#versão-e-status) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](#início-rápido) [![Flask](https://img.shields.io/badge/Flask-Portal-1d3557?style=for-the-badge&logo=flask&logoColor=white)](#o-portal) [![Mermaid](https://img.shields.io/badge/Mermaid-Diagrams-ff3670?style=for-the-badge)](#diagramas-e-compatibilidade) [![Graphviz](https://img.shields.io/badge/Graphviz-Engine-1788b5?style=for-the-badge)](#como-funciona)
+[![Version](https://img.shields.io/badge/version-1.4.3-52c7ef?style=for-the-badge)](#versão-e-status) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](#início-rápido) [![Flask](https://img.shields.io/badge/Flask-Portal-1d3557?style=for-the-badge&logo=flask&logoColor=white)](#o-portal) [![Mermaid](https://img.shields.io/badge/Mermaid-Diagrams-ff3670?style=for-the-badge)](#diagramas-e-compatibilidade) [![Graphviz](https://img.shields.io/badge/Graphviz-Engine-1788b5?style=for-the-badge)](#como-funciona)
 
 **[Início rápido](#início-rápido) · [Recursos](#por-que-usar) · [Portal](#o-portal) · [Documentação](#documentação-e-documentos-markdown) · [Arquitetura](#estrutura-do-projeto) · [Referências](#referências)**
 
@@ -255,7 +255,7 @@ Se a interface parecer desatualizada, recarregue com `Ctrl+Shift+R`. Se o portal
 
 ## Versão e status
 
-**Versão de lançamento: `1.4.2`** — consolidação da linha de desenvolvimento anterior. Veja [`RELEASE_NOTES_1.4.2.md`](RELEASE_NOTES_1.4.2.md) para o histórico do lançamento.
+**Versão de lançamento: `1.4.3`** — menu de conta e melhorias na navegação de compartilhamento. Veja [`RELEASE_NOTES_1.4.3.md`](RELEASE_NOTES_1.4.3.md) para o histórico do lançamento.
 
 O projeto está em fase de **lançamento e testes locais**. Pontos conhecidos: cobertura Mermaid desigual entre portal e CLI; BPMN simplificado; tradução parcial; e integração MCP/ChatGPT dependente de configuração e validação no ambiente de destino.
 

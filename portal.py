@@ -1,4 +1,4 @@
-"""Athena GraphKit Portal v1.4.2. Local and hosted project/document/diagram editor."""
+"""Athena GraphKit Portal. Local and hosted project/document/diagram editor."""
 import base64
 import io
 import json
@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from werkzeug.exceptions import BadRequest
 from flask import Flask, abort, jsonify, render_template, request, send_file
-from athena import AthenaGraphKit
+from athena import AthenaGraphKit, __version__
 
 ROOT = Path(__file__).resolve().parent
 from athena_cairo import load_cairosvg, CairoUnavailable
@@ -104,7 +104,7 @@ def default_project(pid='exemplo'):
     return {'id':pid,'title':'Arquitetura de Integração','theme':'dark','markdown':'# Arquitetura de Integração\n\nEste documento descreve o fluxo principal.\n\n{{diagram:fluxo}}\n','diagrams':[{'id':'fluxo','title':'Integração SAP','kind':'flowchart','code':DEFAULT,'nodes':[{'id':'CLK','label':'Portal de Compras','x':45,'y':80},{'id':'API','label':'API RAP','x':285,'y':80},{'id':'SAP','label':'SAP S/4HANA','x':525,'y':80}],'edges':[{'from':'CLK','to':'API','label':''},{'from':'API','to':'SAP','label':''}]}]}
 
 @app.get('/')
-def home(): return render_template('index.html', hosted=studio is not None)
+def home(): return render_template('index.html', hosted=studio is not None, studio_version=__version__)
 
 @app.get('/healthz')
 def health():
@@ -174,7 +174,7 @@ def backup_projects():
                     data=validate_project(json.loads(path.read_text(encoding='utf-8')))
                     z.writestr('projects/'+path.name,json.dumps(data,ensure_ascii=False,indent=2))
                 except (BadRequest,ValueError,OSError):continue
-        z.writestr('README.txt','Athena GraphKit v1.4.2 - backup de projetos JSON. Importe um projeto por vez no portal.\n')
+        z.writestr('README.txt',f'Athena GraphKit v{__version__} - backup de projetos JSON. Importe um projeto por vez no portal.\n')
     archive.seek(0)
     return send_file(archive,mimetype='application/zip',as_attachment=True,download_name='athena_projetos_backup.zip')
 
@@ -304,7 +304,7 @@ def export_documentation():
     if missing: abort(400,'Referências inexistentes: '+', '.join(missing))
     if len(set(markers))>100: abort(400,'Excesso de diagramas no documento')
     archive=io.BytesIO()
-    manifest={'generator':'Athena GraphKit','version':'1.4.2','project':project['id'],'theme':project.get('theme','dark'),'diagrams':[]}
+    manifest={'generator':'Athena GraphKit','version':__version__,'project':project['id'],'theme':project.get('theme','dark'),'diagrams':[]}
     with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED) as z:
         for did in dict.fromkeys(markers):
             d=diagram_map[did]; image=images.get(did)
@@ -318,7 +318,7 @@ def export_documentation():
             manifest['diagrams'].append({'id':did,'title':d['title'],'kind':d['kind'],'image':f'imagens/{did}.png'})
         z.writestr('documento_athena.md',markdown)
         z.writestr('manifest.json',json.dumps(manifest,ensure_ascii=False,indent=2))
-        z.writestr('README.txt','Athena GraphKit v1.4.2: documento_athena.md usa imagens/ em caminhos relativos.\nExtraia o ZIP para manter os caminhos relativos das imagens.\nOs arquivos podem ser utilizados em editores Markdown e geradores de documentos.\n')
+        z.writestr('README.txt',f'Athena GraphKit v{__version__}: documento_athena.md usa imagens/ em caminhos relativos.\nExtraia o ZIP para manter os caminhos relativos das imagens.\nOs arquivos podem ser utilizados em editores Markdown e geradores de documentos.\n')
     archive.seek(0)
     return send_file(archive,mimetype='application/zip',as_attachment=True,download_name='athena_documentacao.zip')
 

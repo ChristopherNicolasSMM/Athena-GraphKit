@@ -1,4 +1,4 @@
-# Integração MCP e backups — Athena GraphKit v1.4.2
+# Integração MCP e backups — Athena GraphKit v1.4.3
 
 ## Backup e importação
 

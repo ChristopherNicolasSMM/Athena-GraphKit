@@ -6,7 +6,8 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='sharing.css') }}">
 </head>
 <body><main>
-<nav><a href="/">Studio</a> <a href="{{ url_for('sharing.dashboard') }}">Compartilhamento</a>
-<form method="post" action="{{ url_for('accounts.logout') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button>Sair</button></form></nav>
+<nav><a class="sharing-action" href="/">Studio</a> <a class="sharing-action" href="{{ url_for('sharing.dashboard') }}">Compartilhamento</a>
+<a class="sharing-action" href="{{ url_for('sharing.profile') }}">Meu perfil</a>
+<form method="post" action="{{ url_for('accounts.logout') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="sharing-action">Encerrar sessão</button></form></nav>
 {% block content %}{% endblock %}
 </main></body></html>

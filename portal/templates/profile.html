@@ -1,0 +1,18 @@
+{% extends 'sharing_base.html' %}
+{% block title %}Meu perfil{% endblock %}
+{% block content %}
+<h1>Meu perfil</h1>
+<section>
+<dl class="profile-details">
+<dt>E-mail</dt><dd>{{ profile.email }}</dd>
+<dt>Confirmação do e-mail</dt><dd>{{ 'Confirmado' if profile.email_verified else 'Pendente' }}</dd>
+</dl>
+{% if not profile.email_verified %}<p>Para receber compartilhamentos diretamente pelo e-mail, peça ao responsável pelo ambiente para confirmar o endereço da conta.</p>{% endif %}
+</section>
+<section>
+<h2>Organizações</h2>
+<ul>{% for organization in organizations %}<li>{{ organization.name }}</li>{% else %}<li>Nenhuma organização vinculada.</li>{% endfor %}</ul>
+<h2>Grupos</h2>
+<ul>{% for group in groups %}<li>{{ group.name }} · {{ group.organization }}</li>{% else %}<li>Nenhum grupo vinculado.</li>{% endfor %}</ul>
+</section>
+{% endblock %}

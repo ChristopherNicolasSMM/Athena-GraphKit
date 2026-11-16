@@ -127,6 +127,27 @@ class HostedAccessTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json(), {'status': 'ok'})
 
+    def test_account_menu_profile_and_received_projects(self):
+        self.assertEqual(self.request(self.other, '/compartilhamento/perfil').status_code, 302)
+        self.assertEqual(self.login(self.owner, 'owner').status_code, 302)
+        self.assertEqual(self.login(self.member, 'member').status_code, 302)
+        self.assertEqual(self.mutate(self.owner, '/api/projects', json={'id':'projeto','title':'Projeto da equipe'}).status_code, 201)
+        self.assertEqual(self.grant('group', 'dev', 'visualizar').status_code, 302)
+        home = self.request(self.member, '/').text
+        self.assertIn('STUDIO · v1.4.3', home)
+        self.assertIn('/compartilhamento/#recebidos', home)
+        self.assertIn('Encerrar sessão', home)
+        profile = self.request(self.member, '/compartilhamento/perfil').text
+        self.assertIn('member@example.test', profile)
+        self.assertIn('Desenvolvimento', profile)
+        self.assertNotIn('owner@example.test', profile)
+        projects = self.request(self.member, '/compartilhamento/').text
+        self.assertIn('Projetos compartilhados com você', projects)
+        self.assertIn('Projeto da equipe', projects)
+        self.assertIn('Nenhum projeto próprio', projects)
+        self.assertEqual(self.mutate(self.member, '/conta/sair').status_code, 302)
+        self.assertEqual(self.request(self.member, '/compartilhamento/perfil').status_code, 302)
+
     def test_project_and_diagram_permissions_are_scoped(self):
         self.assertEqual(self.request(self.other, '/api/projects').status_code, 401)
         for client, user in ((self.owner,'owner'), (self.member,'member'), (self.other,'other')):
