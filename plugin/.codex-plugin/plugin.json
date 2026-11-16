@@ -1,7 +1,7 @@
 {
   "name": "athena-graphkit",
-  "version": "1.4.3",
-  "description": "Athena GraphKit",
+  "version": "1.4.4",
+  "description": "Athena GraphKit - Engineering diagrams, documentation and AI guidance.",
   "author": "Christopher N. S. M. Mauricio",
   "icon": "assets/icon.png",
   "logo": "assets/logo.png"
