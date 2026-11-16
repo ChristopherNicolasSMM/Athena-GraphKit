@@ -73,3 +73,92 @@ No navegador, mova um nó no segundo diagrama, alterne **Grade**, salve
 e recarregue. Confira a seleção e o layout. Em **Manuais**, abra
 **Integração MCP e backups** e **Perguntas frequentes (FAQ)** para
 conferir a formatação de código e a tabela de permissões.
+
+
+## Mapa de diretórios e responsabilidades
+
+| Local | Responsabilidade | Interfaces/observações |
+| --- | --- | --- |
+| `athena/` | Fachada Python (`engine.py`) de geração de artefatos | Consumida por CLI e MCP |
+| `core/` | Leitura de arquivos, parser do subconjunto Mermaid, renderizador Graphviz e temas | `leitor.py`, `parser.py`, `renderizador.py`, `temas.py` |
+| `portal.py` | Inicialização Flask e rotas do Studio | Reúne APIs e integra componentes de acesso |
+| `portal/templates/` | Templates HTML do portal | Apresentação do Studio |
+| `portal/static/` | Scripts, estilos e recursos de interface | `app.js`, editor e prévia Mermaid.js |
+| `portal/branding-source/` | Fontes de identidade visual | Não confundir com lógica de aplicação |
+| `athena_access/` | Sessões, identidade, controle de acesso, dados e integrações do Studio | `accounts.py`, `store.py`, `studio.py`, `admin.py`, `delivery.py`, templates e estáticos |
+| `temas/` | Definições JSON de temas de diagramas | Dark, corporativo e SAP Fiori |
+| `entradas/` | Exemplos de Mermaid/Markdown | Referência e teste manual |
+| `manuais/` | Instruções ao usuário renderizadas no portal | Markdown numerado, API `/api/manuals` |
+| `docs/` | Arquitetura, operação de referência e notas de versão | `TECHNICAL.md`, `KNOWLEDGE_SKILLS.md`, `releases/` |
+| `deploy/` | Execução hospedada e atualização PythonAnywhere | WSGI, releases, venv, configuração, segurança e permissões |
+| `packaging/` | Construção e verificação de distribuição portátil | Arquivamento, runtime, launcher e verificações |
+| `plugin/` | Metadados, Skills, scripts e referências para agentes | Plugin distribuível; instalação depende do cliente |
+| `tests/` | Testes automatizados Python | Engine, portal, MCP, hospedagem e Cairo |
+| `tests_js/` | Testes automatizados JavaScript | Modelo, C4, i18n, estruturados e upgrades |
+| `workspace/` | Dados locais e arquivos de projetos legados | Não versionar nem editar dados reais sem backup/autorização |
+| `.github/` | Automação e fluxos do GitHub | CI e builds quando configurados |
+| `.vscode/` | Configuração do ambiente de desenvolvimento | Execução/depuração local |
+| `libs/cairo/` | Instruções ou bibliotecas nativas opcionais Cairo | Necessárias para certos fluxos de PNG |
+| `AGENTS.md` | Regras de governança para agentes | Exige aprovação arquitetural antes de alterações |
+
+## Fluxos entre componentes
+
+### Criação e edição no Studio
+
+```mermaid
+flowchart LR
+    U[Usuário] --> FE[Portal UI / app.js]
+    FE --> API[Flask / portal.py]
+    API --> AUTH[athena_access / autorização]
+    AUTH --> DB[(SQLite)]
+    FE --> PREVIEW[Mermaid.js / prévia]
+    API --> EXPORT[Exportação e documentação]
+```
+
+A edição visual mantém posições em `project.diagrams[].nodes`. O salvamento exige autenticação, CSRF e revisão esperada. Conflitos retornam HTTP 409 para reconciliação. A API deve autorizar acessos independentemente do que a UI mostre.
+
+### Linha de comando e MCP
+
+```mermaid
+flowchart LR
+    CLI[gerador.py] --> API[AthenaGraphKit]
+    MCP[mcp_server.py / stdio] --> API
+    API --> CORE[core / parser e temas]
+    CORE --> DOT[Graphviz]
+    DOT --> FILE[SVG PNG PDF]
+```
+
+O `mcp_server.py` registra `list_themes`, `render_diagram` e `prepare_documentation`. O servidor usa `stdio` e não expõe um endpoint HTTP por padrão. Diagramas de sequência, classes, ER e C4 podem ser renderizados no portal com Mermaid.js, mas não devem ser anunciados como compatíveis com o parser Graphviz/MCP.
+
+### Publicação hospedada
+
+```mermaid
+flowchart LR
+    GIT[Branch producao] --> UPDATE[deploy/update.py]
+    UPDATE --> RELEASE[Release isolada]
+    RELEASE --> VENV[deploy/runtime.py / venv]
+    VENV --> TEST[Smoke test]
+    TEST --> CURRENT[Ponteiro current]
+    CURRENT --> WSGI[WSGI reload]
+    WSGI --> APP[Flask / SQLite externo]
+```
+
+O banco e `app.json` ficam fora das pastas de release. Em falha de preparação, a versão ativa deve ser preservada. A limpeza de `releases/` e `venvs/` exige identificar a release ativa, conservar rollback e obter aprovação.
+
+## Organização e atualização do conhecimento para IA
+
+As quatro Skills são declaradas por `plugin/plugin.json`. O mapa detalhado de especializações está em [KNOWLEDGE_SKILLS.md](KNOWLEDGE_SKILLS.md). `AGENTS.md` exige que qualquer agente **apresente decisões propostas e pergunte se o arquiteto concorda antes de modificar arquivos**; autorizações devem ser específicas ao escopo. Modificações funcionais exigem revisão de código, testes, documentação e referências das Skills, sem duplicar os manuais do usuário.
+
+## Matriz de validação por alteração
+
+| Alteração | Validar |
+| --- | --- |
+| Core/CLI | Testes do engine, entradas Mermaid, arquivos exportados e temas |
+| Portal/modelo JS | Testes JS, navegação, salvar/recarregar e tratamento de HTTP 409 |
+| Contas/compartilhamento | Autenticação, CSRF, autorização servidor, revisões e isolamento |
+| Exportação | SVG/PNG, Cairo e pacote Markdown com referências |
+| MCP | Imports do SDK instalado, descoberta e chamadas das três ferramentas |
+| Deploy | Smoke test, logs, healthz, release ativa e rollback |
+| Skills/documentação | Manifests, frontmatter, referências, caminhos e instruções de aprovação |
+
+Não confundir documentação de comportamento com comprovação de testes executados. Os testes devem ser executados no ambiente apropriado antes de incorporar mudanças de produção.
