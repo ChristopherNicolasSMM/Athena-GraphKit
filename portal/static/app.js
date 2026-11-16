@@ -1,7 +1,7 @@
 const mermaid = globalThis.mermaid;
 import {parseFlow,flowCode,parseSequence,sequenceCode,parseC4,c4Code,parseER,erCode,parseClass,classCode,recoverLegacyFlow,validateBpmnModel,BPMN_COMPONENTS} from './model.js';
 const $=id=>document.getElementById(id);
-const state={project:null,active:null,tab:'visual',connect:false,source:null,selected:null,drag:null,dirty:false,visualError:null,selectedNodes:new Set(),selectedEdge:null,undo:[],redo:[],baseline:null,restoring:false,zoom:1};
+const state={project:null,active:null,tab:'visual',connect:false,source:null,selected:null,drag:null,dirty:false,saving:false,visualError:null,selectedNodes:new Set(),selectedEdge:null,undo:[],redo:[],baseline:null,restoring:false,zoom:1};
 const themes={corporativo:{theme:'base',themeVariables:{primaryColor:'#e5f4fb',primaryTextColor:'#0b1f3a',primaryBorderColor:'#1769aa',lineColor:'#1769aa',secondaryColor:'#e1eff7',tertiaryColor:'#f6fbff',background:'#ffffff',fontFamily:'Segoe UI'}},sap_fiori:{theme:'base',themeVariables:{primaryColor:'#d8eaf6',primaryTextColor:'#0a3b61',primaryBorderColor:'#0a6ed1',lineColor:'#0a6ed1',secondaryColor:'#edf6fc',background:'#ffffff',fontFamily:'Arial'}},dark:{theme:'dark',themeVariables:{primaryColor:'#1b3653',primaryTextColor:'#f0f8ff',primaryBorderColor:'#40bce5',lineColor:'#64d2f5',secondaryColor:'#263e5c',background:'#0e1728',fontFamily:'Segoe UI'}}};
 const samples={flowchart:'flowchart LR\n    A[Portal de Compras] --> B[API RAP]\n    B --> C[(SAP S/4HANA)]',sequence:'sequenceDiagram\n    autonumber\n    participant CLK as Processo de Compras\n    participant SAP as SAP RFC\n    CLK->>SAP: Consultar dados\n    SAP-->>CLK: Resultado',usecase:'flowchart LR\n    U([Usuário]) --> UC1([Consultar cotação])\n    U --> UC2([Criar pedido])\n    UC2 --> SAP[SAP S/4HANA]',er:'erDiagram\n    CUSTOMER ||--o{ ORDER : places\n    CUSTOMER {\n        int id PK\n        string name\n    }\n    ORDER {\n        int id PK\n        int customer_id FK\n    }',class:'classDiagram\n    class Pedido {\n        +String numero\n        +criar()\n    }\n    class Item {\n        +int quantidade\n    }\n    Pedido "1" *-- "many" Item : contém',bpmn:'flowchart LR\n    inicio((Início)) --> tarefa[Analisar solicitação]\n    tarefa --> gateway{Aprovado?}\n    gateway -->|Sim| fim((Fim))\n    gateway -->|Não| tarefa',c4:'C4Context\n    title Contexto da solução\n    Person(user, "Usuário", "Equipe de compras")\n    System(portal, "Portal de Compras", "Aplicação")\n    System_Ext(sap, "SAP S/4HANA", "ERP")\n    Rel(user, portal, "Utiliza")\n    Rel(portal, sap, "Integra")'};
 const makeId=()=> 'd_'+Math.random().toString(36).slice(2,10);
@@ -15,32 +15,43 @@ function secureFetch(url, options={}) {
 }
 async function api(url,options={}){const r=await secureFetch(url,options);if(!r.ok){let j=await r.json().catch(()=>({error:r.statusText}));throw Error(j.error||'Erro HTTP '+r.status);}return r.json();}
 function current(){return state.project?.diagrams.find(d=>d.id===state.active)}
-function snapshot(){return JSON.stringify(state.project)}
+function snapshot(){
+  if(!state.project)return null;
+  const {_access,...content}=state.project;
+  return JSON.stringify(content);
+}
 function resetHistory(){state.undo=[];state.redo=[];state.baseline=snapshot();updateHistoryButtons()}
 function updateHistoryButtons(){if($('undo'))$('undo').disabled=!state.undo.length;if($('redo'))$('redo').disabled=!state.redo.length}
 function mark(){if(!state.restoring&&state.project){const now=snapshot();if(state.baseline!==null&&now!==state.baseline){state.undo.push(state.baseline);if(state.undo.length>70)state.undo.shift();state.redo=[];state.baseline=now;updateHistoryButtons()}}state.dirty=true;notice('Alterações não salvas')}
-function historyMove(back){const src=back?state.undo:state.redo,dst=back?state.redo:state.undo;if(!src.length)return;dst.push(snapshot());state.restoring=true;const selected=state.active;state.project=JSON.parse(src.pop());state.baseline=snapshot();state.active=state.project.diagrams.some(d=>d.id===selected)?selected:state.project.diagrams[0]?.id;state.selectedNodes.clear();state.selectedEdge=null;$('projectTitle').value=state.project.title;$('theme').value=state.project.theme;$('markdown').value=state.project.markdown;switchDiagram(state.active);state.restoring=false;state.dirty=true;updateHistoryButtons();notice(back?'Desfeito':'Refeito')}
+function historyMove(back){const src=back?state.undo:state.redo,dst=back?state.redo:state.undo;if(!src.length)return;dst.push(snapshot());state.restoring=true;const selected=state.active;const access=state.project._access;state.project=JSON.parse(src.pop());if(access)state.project._access=access;state.baseline=snapshot();state.active=state.project.diagrams.some(d=>d.id===selected)?selected:state.project.diagrams[0]?.id;state.selectedNodes.clear();state.selectedEdge=null;$('projectTitle').value=state.project.title;$('theme').value=state.project.theme;$('markdown').value=state.project.markdown;switchDiagram(state.active);state.restoring=false;state.dirty=true;updateHistoryButtons();notice(back?'Desfeito':'Refeito')}
 
 function htmlEscape(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
 function downloadBlob(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 async function loadProjects(selected){const r=await api('/api/projects');$('projects').replaceChildren();for(const p of r.projects){const o=new Option(p.title,p.id);$('projects').add(o)}if(selected&&r.projects.some(p=>p.id===selected))$('projects').value=selected;else if(r.projects.length)$('projects').value=r.projects[0].id;else{const p=await api('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...(csrfToken?{}:{id:'exemplo'}),title:'Arquitetura de Integração'})});return loadProjects(p.id)}await loadProject($('projects').value)}
-async function loadProject(id){state.project=await api('/api/projects/'+id);state.active=state.project.diagrams[0]?.id||null;state.dirty=false;setProjectAccess(state.project._access);$('projectTitle').value=state.project.title;$('theme').value=state.project.theme;$('markdown').value=state.project.markdown;renderList();switchDiagram(state.active);resetHistory();notice('Projeto carregado')}
+async function loadProject(id){state.project=await api('/api/projects/'+id);const params=new URLSearchParams(location.search);const diagram=params.get('projeto')===id?params.get('diagrama'):null;state.active=state.project.diagrams.find(d=>d.id===diagram)?.id??state.project.diagrams[0]?.id??null;state.dirty=false;setProjectAccess(state.project._access);$('projectTitle').value=state.project.title;$('theme').value=state.project.theme;$('markdown').value=state.project.markdown;renderList();switchDiagram(state.active);resetHistory();notice('Projeto carregado')}
 function setProjectAccess(access){
   const level=access?.level??3;
-  for(const id of ['saveProject','renameDiagram','deleteDiagram','addDiagram','newByType','connect','removeSelected','syncCode','repairCode','insertDiagramButton','insertHeading']){
+  for(const id of ['saveProject','toggleCanvasGrid','renameDiagram','deleteDiagram','addDiagram','newByType','connect','removeSelected','syncCode','repairCode','insertDiagramButton','insertHeading']){
     const control=$(id);
     if(control)control.disabled=level<2;
   }
   for(const id of ['code','markdown','projectTitle'])$(id).readOnly=level<2;
   const viewOnly=$('projectViewOnly');
   if(viewOnly)viewOnly.hidden=level>=2;
+  $('saveProject').disabled=level<2||state.saving;
   $('deleteProject').disabled=level<3;
   const link=$('projectPermissions');
   if(link){link.hidden=level<3;link.href='/compartilhamento/'+state.project.id+'/permissoes'}
 }
 function refreshDiagramPicker(){const picker=$('insertDiagram');if(!picker||!state.project)return;const selected=picker.value;picker.replaceChildren();for(const d of state.project.diagrams)picker.add(new Option(d.title+' ('+d.kind+')',d.id));if([...picker.options].some(o=>o.value===selected))picker.value=selected}
 function renderList(){refreshDiagramPicker();$('diagramList').replaceChildren();for(const d of state.project.diagrams){const b=document.createElement('button');b.className='diagram-item'+(d.id===state.active?' selected':'');b.innerHTML=`<span>${htmlEscape(d.title)}</span><small>${htmlEscape(d.kind)}</small>`;b.onclick=()=>switchDiagram(d.id);$('diagramList').append(b)}}
-function switchDiagram(id){state.active=id;state.source=null;state.selected=null;state.selectedNodes.clear();state.selectedEdge=null;const d=current();if(!d)return;$('diagramTitle').textContent=d.title;$('diagramKind').textContent=d.kind;$('diagramType').value=d.kind;$('code').value=d.code;renderList();drawNodes();if(state.tab==='preview')renderPreview();if(state.tab==='document')renderDocument()}
+function switchDiagram(id){
+  state.active=id;
+  const url=new URL(location.href);
+  url.searchParams.set('projeto',state.project.id);
+  if(id)url.searchParams.set('diagrama',id);else url.searchParams.delete('diagrama');
+  history.replaceState(null,'',url);
+  updateCanvasGrid();state.source=null;state.selected=null;state.selectedNodes.clear();state.selectedEdge=null;const d=current();if(!d)return;$('diagramTitle').textContent=d.title;$('diagramKind').textContent=d.kind;$('diagramType').value=d.kind;$('code').value=d.code;renderList();drawNodes();if(state.tab==='preview')renderPreview();if(state.tab==='document')renderDocument()}
 function switchTab(tab){state.tab=tab;document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('active',e.dataset.tab===tab));document.querySelectorAll('.tab-content').forEach(e=>e.classList.toggle('active',e.id===tab+'Tab'));if(tab==='preview')renderPreview();if(tab==='document')renderDocument();if(tab==='visual'){if(current()?.visualStale)importCode();else drawNodes()}}
 function addNode(type,x,y){const d=current();if(!d)return;if(d.visualStale){notice('Importe o código para o visual antes de editar os nós',true);return}if(!['flowchart','usecase','bpmn','c4'].includes(d.kind)){notice('Use o editor de sequência para adicionar participantes e mensagens.',true);return}const id='N'+Math.random().toString(36).slice(2,7);d.nodes.push({id,label:type==='database'?'Banco de dados':type==='actor'?'Ator':type==='decision'?'Decisão':type==='external'?'Sistema externo':BPMN_COMPONENTS[type]||'Processo',type:d.kind==='c4'?({actor:'Person',database:'SystemDb',external:'System_Ext'}[type]||'System'):type,x:Math.max(10,x),y:Math.max(10,y)});syncGraph();drawNodes();mark()}
 function flowDirection(d){return d.flowDirection||/^\s*(?:flowchart|graph)\s+(LR|RL|TB|TD|BT)\b/i.exec(d.code)?.[1].toUpperCase()||'LR'}
@@ -113,9 +124,13 @@ function drawStructured(){
 }
 function drawC4Level(){const d=current();if(d?.kind!=='c4')return;const bar=document.createElement('label');bar.className='c4-level';bar.textContent='Nível C4 ';const sel=document.createElement('select');for(const level of ['C4Context','C4Container','C4Component'])sel.add(new Option(level,level));sel.value=d.c4Header||'C4Context';sel.onchange=()=>{d.c4Header=sel.value;syncGraph();mark()};bar.append(sel);$('edgeInspector').prepend(bar)}
 function drawNodes(){const d=current();$('nodeLayer').replaceChildren();$('connections').replaceChildren();$('edgeInspector').replaceChildren();if(!d)return;if(d.visualStale){$('visualNote').textContent='Código alterado: importe para o visual antes de editar.';return}const enabled=['flowchart','usecase','bpmn','c4'].includes(d.kind);$('sequenceEditor').hidden=!['sequence','er','class'].includes(d.kind);$('canvasWrap').parentElement.hidden=['sequence','er','class'].includes(d.kind);if(['er','class'].includes(d.kind)){drawStructured();return}if(d.kind==='sequence'){drawSequence();return}if(!enabled)return;drawC4Level();$('visualNote').textContent='Shift+clique: multisseleção · Arraste os nós selecionados · Delete: excluir · Ctrl+Z/Y: histórico';for(const n of d.nodes){const el=document.createElement('div');el.className='node '+(n.type||'process');el.textContent=n.label;el.style.left=n.x+'px';el.style.top=n.y+'px';el.dataset.id=n.id;
- el.onpointerdown=e=>{if(state.connect)return;e.preventDefault();if(e.shiftKey){if(state.selectedNodes.has(n.id))state.selectedNodes.delete(n.id);else state.selectedNodes.add(n.id);state.selected=n.id;drawSelection();return}if(!state.selectedNodes.has(n.id)){state.selectedNodes=new Set([n.id]);state.selected=n.id}state.selectedEdge=null;state.drag={id:n.id,startX:e.clientX,startY:e.clientY,positions:new Map(d.nodes.filter(x=>state.selectedNodes.has(x.id)).map(x=>[x.id,{x:x.x,y:x.y}]))};el.setPointerCapture(e.pointerId);drawSelection()};
+ el.onpointerdown=e=>{if(state.connect||(state.project._access?.level??3)<2)return;e.preventDefault();if(e.shiftKey){if(state.selectedNodes.has(n.id))state.selectedNodes.delete(n.id);else state.selectedNodes.add(n.id);state.selected=n.id;drawSelection();return}if(!state.selectedNodes.has(n.id)){state.selectedNodes=new Set([n.id]);state.selected=n.id}state.selectedEdge=null;state.drag={id:n.id,startX:e.clientX,startY:e.clientY,positions:new Map(d.nodes.filter(x=>state.selectedNodes.has(x.id)).map(x=>[x.id,{x:x.x,y:x.y}]))};el.setPointerCapture(e.pointerId);drawSelection()};
  el.onpointermove=e=>{if(!state.drag||state.drag.id!==n.id)return;const dx=(e.clientX-state.drag.startX)/state.zoom,dy=(e.clientY-state.drag.startY)/state.zoom;for(const node of d.nodes){const origin=state.drag.positions.get(node.id);if(origin){node.x=Math.max(0,Math.round((origin.x+dx)/10)*10);node.y=Math.max(0,Math.round((origin.y+dy)/10)*10);const dom=[...$('nodeLayer').children].find(c=>c.dataset.id===node.id);if(dom){dom.style.left=node.x+'px';dom.style.top=node.y+'px'}}}drawEdges()};
- el.onpointerup=()=>{if(state.drag){state.drag=null;mark()}};
+ el.onpointerup=el.onlostpointercapture=()=>{
+   if(state.drag?.id!==n.id)return;
+   state.drag=null;
+   if(snapshot()!==state.baseline)mark();
+ };
  el.onclick=e=>{if(state.connect){if(!state.source){state.source=n.id;notice('Selecione o nó de destino')}else if(state.source!==n.id){d.edges.push({from:state.source,to:n.id,label:'',direction:$('edgeDirection').value,kind:d.kind==='bpmn'?'sequenceFlow':'association'});state.source=null;state.connect=false;$('connect').classList.remove('active');syncGraph();drawEdges();drawEdgeInspector();mark()}}else if(!e.shiftKey&&!state.drag){state.selected=n.id;state.selectedNodes=new Set([n.id])}drawSelection()};
  el.ondblclick=()=>{const label=prompt('Nome do componente:',n.label);if(label!==null&&label.trim()){n.label=label.trim().slice(0,100);syncGraph();drawNodes();mark()}};$('nodeLayer').append(el)}drawSelection();drawEdges();drawEdgeInspector()}
 function drawSelection(){document.querySelectorAll('.node').forEach(el=>{el.classList.toggle('selected',state.selectedNodes.has(el.dataset.id));el.classList.toggle('connect-source',el.dataset.id===state.source)})}
@@ -182,13 +197,49 @@ $('validateDocument').onclick=()=>{const r=documentProblems();$('documentValidat
 $('exportMarkdown').onclick=()=>{const blob=new Blob([state.project.markdown],{type:'text/markdown;charset=utf-8'});downloadBlob(blob,state.project.id+'.md')};
 $('markdown').oninput=()=>{state.project.markdown=$('markdown').value;mark()};
 $('exportDocumentation').onclick=async()=>{try{notice('Gerando PNGs e pacote de documentação...');const problems=documentProblems();if(problems.missing.length)throw Error('Referências inválidas: '+problems.missing.join(', '));const images={};const used=new Set([...state.project.markdown.matchAll(/\{\{diagram:([^}]+)\}\}/g)].map(m=>m[1]));for(const d of state.project.diagrams.filter(d=>used.has(d.id)))images[d.id]=await pngFor(d);const r=await secureFetch('/api/export/documentation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project:state.project,images})});if(!r.ok){const j=await r.json();throw Error(j.error)}downloadBlob(await r.blob(),'athena_documentacao.zip');notice('Pacote Markdown + imagens exportado')}catch(e){notice(e.message,true)}};
-$('saveProject').onclick=async()=>{try{state.project.title=$('projectTitle').value.trim()||'Projeto';state.project.theme=$('theme').value;state.project.markdown=$('markdown').value;await api('/api/projects/'+state.project.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state.project)});state.dirty=false;notice('Projeto salvo');await loadProjects(state.project.id)}catch(e){notice(e.message,true)}};
-$('projects').onchange=async()=>{if(state.dirty&&!confirm('Descartar alterações não salvas?'))return;await loadProject($('projects').value)};
+$('saveProject').onclick=async()=>{
+  const project=state.project;
+  if(!project||state.saving||(project._access?.level??3)<2)return;
+  project.title=$('projectTitle').value.trim()||'Projeto';
+  project.theme=$('theme').value;
+  project.markdown=$('markdown').value;
+  const savedContent=snapshot();
+  const savedTitle=project.title;
+  state.saving=true;
+  setProjectAccess(project._access);
+  try{
+    const result=await api('/api/projects/'+project.id,{
+      method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(project)
+    });
+    const option=[...$('projects').options].find(item=>item.value===project.id);
+    if(option)option.textContent=savedTitle;
+    if(state.project?.id!==project.id||state.project._access?.revision!==project._access?.revision)return;
+    if(state.project._access)state.project._access.revision=result.revision;
+    state.dirty=snapshot()!==savedContent;
+    notice(state.dirty?'Ainda há alterações não salvas':'Projeto salvo');
+  }catch(e){notice(e.message,true)}
+  finally{
+    state.saving=false;
+    if(state.project)setProjectAccess(state.project._access);
+  }
+};
+$('projects').onchange=async()=>{
+  if(state.dirty&&!confirm('Descartar alterações não salvas?')){
+    $('projects').value=state.project.id;
+    return;
+  }
+  await loadProject($('projects').value);
+};
+window.addEventListener('beforeunload',event=>{
+  if(!state.dirty&&!state.saving)return;
+  event.preventDefault();
+  event.returnValue=true;
+});
 $('newProject').onclick=async()=>{const title=prompt('Nome do novo projeto:','Novo projeto');if(!title)return;try{const p=await api('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})});await loadProjects(p.id)}catch(e){notice(e.message,true)}};
 $('deleteProject').onclick=async()=>{if(!confirm('Excluir este projeto permanentemente?'))return;try{await api('/api/projects/'+state.project.id,{method:'DELETE'});await loadProjects()}catch(e){notice(e.message,true)}};
 $('theme').onchange=()=>{state.project.theme=$('theme').value;mark();if(state.tab==='preview')renderPreview()};$('projectTitle').oninput=mark;
 $('renameDiagram').onclick=()=>{const d=current();if(!d)return;const name=prompt('Novo nome do diagrama:',d.title);if(!name?.trim())return;d.title=name.trim().slice(0,120);$('diagramTitle').textContent=d.title;renderList();mark()};
-$('deleteDiagram').onclick=()=>{const d=current();if(!d||!confirm('Excluir diagrama '+d.title+'?'))return;state.project.diagrams=state.project.diagrams.filter(x=>x.id!==d.id);state.active=state.project.diagrams[0]?.id||null;renderList();if(state.active)switchDiagram(state.active);else{$('nodeLayer').replaceChildren();$('code').value=''}mark();notice('Diagrama excluído. Remova também sua referência no Markdown.')};
+$('deleteDiagram').onclick=()=>{const d=current();if(!d||!confirm('Excluir diagrama '+d.title+'?'))return;state.project.diagrams=state.project.diagrams.filter(x=>x.id!==d.id);state.active=state.project.diagrams[0]?.id||null;renderList();switchDiagram(state.active);if(!state.active){$('nodeLayer').replaceChildren();$('code').value=''}mark();notice('Diagrama excluído. Remova também sua referência no Markdown.')};
 $('addDiagram').onclick=()=>$('newDiagramDialog').showModal();$('newDiagramForm').onsubmit=e=>{if(e.submitter?.value!=='ok')return;const title=$('newDiagramTitle').value.trim()||'Diagrama';const kind=$('newDiagramKind').value;const id=makeId();const d={id,title,kind,code:samples[kind],nodes:[],edges:[]};if(kind==='sequence')d.sequence=parseSequence(d.code);if(kind==='er')d.structured=parseER(d.code);if(kind==='class')d.structured=parseClass(d.code);if(kind==='c4'){const m=parseC4(d.code);d.nodes=m.nodes;d.edges=m.edges;d.c4Title=m.title;d.c4Header=m.header}if(['flowchart','usecase','bpmn'].includes(kind)){const m=parseFlow(d.code);d.nodes=m.nodes;d.edges=m.edges}state.project.diagrams.push(d);state.project.markdown+='\n## '+title+'\n\n{{diagram:'+id+'}}\n';$('markdown').value=state.project.markdown;switchDiagram(id);mark()};
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));$('refreshPreview').onclick=()=>{switchTab('preview')};$('undo').onclick=()=>historyMove(true);$('redo').onclick=()=>historyMove(false);window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!e.target.closest('input,textarea,[contenteditable]')&&e.key.toLowerCase()==='z'){e.preventDefault();historyMove(e.shiftKey?false:true)}if((e.ctrlKey||e.metaKey)&&!e.target.closest('input,textarea,[contenteditable]')&&e.key.toLowerCase()==='y'){e.preventDefault();historyMove(false)}if(['Delete','Backspace'].includes(e.key)&&!e.target.closest('input,textarea,select,[contenteditable]')&&state.tab==='visual'&&(state.selectedNodes.size||state.selectedEdge!==null)){e.preventDefault();$('removeSelected').click()}if(e.key==='Escape'&&state.connect){state.connect=false;state.source=null;$('connect').classList.remove('active');drawSelection()}if(e.ctrlKey&&e.key.toLowerCase()==='s'){e.preventDefault();$('saveProject').click()}if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();switchTab('preview')}});
 loadProjects(new URLSearchParams(location.search).get('projeto')).catch(e=>notice(e.message,true));
@@ -196,7 +247,7 @@ loadProjects(new URLSearchParams(location.search).get('projeto')).catch(e=>notic
 $('newByType').onclick=()=>{$('newDiagramKind').value=$('diagramType').value;$('newDiagramDialog').showModal()};
 
 // v3.0: persistent interface settings and Markdown manual viewer.
-const uiStrings={pt:{studioSharing:'Compartilhamento',projectPermissions:'Permissões',accountMenuLabel:'Minha conta',accountProfileLink:'Meu perfil',accountSharedLink:'Projetos compartilhados',accountLogout:'Encerrar sessão','newProject':'Novo projeto','deleteProject':'Excluir','saveProject':'Salvar projeto','exportDocumentation':'Exportar documentação','addDiagram':'Novo diagrama','newByType':'Criar deste tipo','renameDiagram':'Renomear diagrama','deleteDiagram':'Excluir diagrama','undo':'Desfazer','redo':'Refazer','connect':'Conectar','removeSelected':'Remover seleção','syncCode':'Gerar Mermaid','repairCode':'Reparar legado','importCode':'Importar código → Visual','refreshPreview':'Atualizar prévia','downloadSvg':'SVG','downloadPng':'PNG','openManuals':'Manuais','backupProjects':'Backup ZIP','downloadProject':'Exportar projeto','importProject':'Importar projeto'},en:{studioSharing:'Sharing',projectPermissions:'Permissions',accountMenuLabel:'My account',accountProfileLink:'My profile',accountSharedLink:'Shared projects',accountLogout:'Sign out','newProject':'New project','deleteProject':'Delete','saveProject':'Save project','exportDocumentation':'Export documentation','addDiagram':'New diagram','newByType':'Create this type','renameDiagram':'Rename diagram','deleteDiagram':'Delete diagram','undo':'Undo','redo':'Redo','connect':'Connect','removeSelected':'Remove selection','syncCode':'Generate Mermaid','repairCode':'Repair legacy','importCode':'Import code → Visual','refreshPreview':'Refresh preview','downloadSvg':'SVG','downloadPng':'PNG','openManuals':'Manuals','backupProjects':'Backup ZIP','downloadProject':'Export project','importProject':'Import project'}};
+const uiStrings={pt:{toggleCanvasGrid:'Grade',studioSharing:'Compartilhamento',projectPermissions:'Permissões',accountMenuLabel:'Minha conta',accountProfileLink:'Meu perfil',accountSharedLink:'Projetos compartilhados',accountLogout:'Encerrar sessão','newProject':'Novo projeto','deleteProject':'Excluir','saveProject':'Salvar projeto','exportDocumentation':'Exportar documentação','addDiagram':'Novo diagrama','newByType':'Criar deste tipo','renameDiagram':'Renomear diagrama','deleteDiagram':'Excluir diagrama','undo':'Desfazer','redo':'Refazer','connect':'Conectar','removeSelected':'Remover seleção','syncCode':'Gerar Mermaid','repairCode':'Reparar legado','importCode':'Importar código → Visual','refreshPreview':'Atualizar prévia','downloadSvg':'SVG','downloadPng':'PNG','openManuals':'Manuais','backupProjects':'Backup ZIP','downloadProject':'Exportar projeto','importProject':'Importar projeto'},en:{toggleCanvasGrid:'Grid',studioSharing:'Sharing',projectPermissions:'Permissions',accountMenuLabel:'My account',accountProfileLink:'My profile',accountSharedLink:'Shared projects',accountLogout:'Sign out','newProject':'New project','deleteProject':'Delete','saveProject':'Save project','exportDocumentation':'Export documentation','addDiagram':'New diagram','newByType':'Create this type','renameDiagram':'Rename diagram','deleteDiagram':'Delete diagram','undo':'Undo','redo':'Redo','connect':'Connect','removeSelected':'Remove selection','syncCode':'Generate Mermaid','repairCode':'Repair legacy','importCode':'Import code → Visual','refreshPreview':'Refresh preview','downloadSvg':'SVG','downloadPng':'PNG','openManuals':'Manuals','backupProjects':'Backup ZIP','downloadProject':'Export project','importProject':'Import project'}};
 const uiLabels={pt:['Projeto','Nome','Tema','DIAGRAMAS','TIPO DO DIAGRAMA','BIBLIOTECA DE COMPONENTES','Construtor visual','Código Mermaid','Prévia','Documento Markdown'],en:['Project','Name','Theme','DIAGRAMS','DIAGRAM TYPE','COMPONENT LIBRARY','Visual builder','Mermaid code','Preview','Markdown document']};
 // Extra static UI translations. Preserve the original text for reversible switching.
 const extraUiEnglish={
@@ -246,6 +297,19 @@ $('downloadProject').onclick=async()=>{try{const r=await fetch('/api/projects/'+
 $('importProject').onclick=()=>$('projectImportFile').click();
 $('projectImportFile').onchange=async()=>{const file=$('projectImportFile').files[0];if(!file)return;try{const obj=JSON.parse(await file.text());const r=await secureFetch('/api/projects/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});const data=await r.json();if(!r.ok)throw Error(data.error||'Importação inválida');await loadProjects(data.id);await loadProject(data.id);notice('Projeto importado')}catch(e){notice(e.message,true)}finally{$('projectImportFile').value=''}};
 
+
+function updateCanvasGrid(){
+  const enabled=current()?.showGrid!==false;
+  $('canvasWrap').classList.toggle('grid-hidden',!enabled);
+  $('toggleCanvasGrid').setAttribute('aria-pressed',String(enabled));
+}
+$('toggleCanvasGrid').onclick=()=>{
+  const diagram=current();
+  if(!diagram||(state.project._access?.level??3)<2)return;
+  diagram.showGrid=diagram.showGrid===false;
+  updateCanvasGrid();
+  mark();
+};
 
 // Canvas zoom is independent from the browser zoom; browser Ctrl+/- remains available.
 function setCanvasZoom(next){

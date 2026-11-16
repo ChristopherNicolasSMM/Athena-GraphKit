@@ -91,6 +91,7 @@ class StudioProjects:
             self.replace(db, row, revision, project)
             db.executemany("DELETE FROM grants WHERE scope='diagram' AND resource=?",
                            ((f'{pid}/{did}',) for did in removed))
+            return row['revision'] + 1
 
     @staticmethod
     def revision(access):

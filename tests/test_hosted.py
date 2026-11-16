@@ -145,6 +145,21 @@ class HostedAccessTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json(), {'status': 'ok'})
 
+    def test_saving_canvas_persists_coordinates_and_grid(self):
+        self.assertEqual(self.login(self.owner, 'owner').status_code, 302)
+        self.assertEqual(self.mutate(self.owner, '/api/projects', json={'id':'layout'}).status_code, 201)
+        path = '/api/projects/layout'
+        project = self.request(self.owner, path).get_json()
+        diagram = project['diagrams'][0]
+        diagram['nodes'][0].update(x=310, y=190)
+        diagram['showGrid'] = False
+        result = self.mutate(self.owner, path, method='PUT', json=project)
+        self.assertEqual(result.status_code, 200)
+        updated = self.request(self.owner, path).get_json()
+        self.assertEqual(updated['_access']['revision'], result.get_json()['revision'])
+        self.assertEqual(updated['diagrams'][0], diagram)
+        self.assertEqual(self.mutate(self.owner, path, method='PUT', json=project).status_code, 409)
+
     def test_account_menu_profile_and_received_projects(self):
         self.assertEqual(self.request(self.other, '/compartilhamento/perfil').status_code, 302)
         self.assertEqual(self.login(self.owner, 'owner').status_code, 302)

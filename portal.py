@@ -79,6 +79,7 @@ def validate_project(p):
             if slug(edge.get('from')) not in node_ids or slug(edge.get('to')) not in node_ids:
                 abort(400,'Conexão referencia nó inexistente')
             if not isinstance(edge.get('label',''),str): abort(400,'Rótulo de conexão inválido')
+        if type(d.get('showGrid',True)) is not bool: abort(400,'Preferência de grade inválida')
         if d.get('flowDirection','LR') not in ('LR','RL','TB','TD','BT'): abort(400,'Direção inválida')
     if p.get('theme','dark') not in THEMES: abort(400,'Tema inválido')
     return p
@@ -205,10 +206,10 @@ def save_project(pid):
     data=validate_project(payload())
     if data.get('id')!=pid: abort(400,'ID inconsistente')
     if studio:
-        studio.save(slug(pid),data)
-    else:
-        write_project(project_path(pid),data)
-    return jsonify({'saved':pid})
+        revision=studio.save(slug(pid),data)
+        return jsonify(saved=pid,revision=revision)
+    write_project(project_path(pid),data)
+    return jsonify(saved=pid)
 
 @app.delete('/api/projects/<pid>')
 def delete_project(pid):
