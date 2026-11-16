@@ -44,7 +44,8 @@ jobs:
           mkdir -p dist app
           git archive HEAD | tar -x -C app
           python packaging/runtime_manifest.py "$CONDA_PREFIX" app/runtime-notices
-          "$pack_python" -c 'from conda_pack.cli import main; main()' --prefix "$CONDA_PREFIX" --format no-archive --output app/runtime
+          "$pack_python" -c 'from conda_pack.cli import main; main()' --prefix "$CONDA_PREFIX" --output "$RUNNER_TEMP/athena-runtime.${{ matrix.archive }}"
+          python packaging/archive.py --extract "$RUNNER_TEMP/athena-runtime.${{ matrix.archive }}" app/runtime
           python packaging/archive.py app "dist/athena-graphkit-${{ matrix.name }}.${{ matrix.archive }}"
       - name: Extrair o pacote em outro caminho
         shell: bash -el {0}

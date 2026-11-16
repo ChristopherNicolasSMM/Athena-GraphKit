@@ -12,7 +12,8 @@ def main():
     parser.add_argument("destination", type=Path)
     args = parser.parse_args()
     if args.extract:
-        shutil.unpack_archive(args.source, args.destination, filter="fully_trusted")
+        options = {} if args.source.suffix == ".zip" else {"filter": "fully_trusted"}
+        shutil.unpack_archive(args.source, args.destination, **options)
         return
     extension = ".zip" if args.destination.suffix == ".zip" else ".tar.gz"
     archive_format = "zip" if extension == ".zip" else "gztar"
