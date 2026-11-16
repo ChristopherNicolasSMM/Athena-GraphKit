@@ -57,6 +57,17 @@ class HostedAccessTests(unittest.TestCase):
         return self.mutate(self.owner, '/compartilhamento/projeto/permissoes',
                            data={'principal': principal, 'target': target, 'role': role, 'diagram': diagram})
 
+    def test_language_selection_persists_across_account_pages(self):
+        response = self.request(self.other, '/conta/login?lang=en')
+        self.assertIn(b'<html lang="en">', response.data)
+        self.assertIn(b'aria-label="English" aria-current="true"', response.data)
+        self.assertIn(b'Create account', self.request(self.other, '/conta/login').data)
+        self.assertIn(b'Recover your password', self.request(self.other, '/conta/recuperar').data)
+        self.assertIn(b'Invalid email or password.', self.login(self.other, 'other', 'wrong password').data)
+        response = self.request(self.other, '/conta/login?lang=pt')
+        self.assertIn(b'<html lang="pt-BR">', response.data)
+        self.assertIn(b'Criar conta', self.request(self.other, '/conta/login').data)
+
     def test_registration_confirms_email_and_creates_an_isolated_account(self):
         self.assertEqual(self.login(self.owner, 'owner').status_code, 302)
         self.assertEqual(self.mutate(self.owner, '/api/projects', json={'id':'privado'}).status_code, 201)

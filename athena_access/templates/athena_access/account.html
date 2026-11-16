@@ -1,16 +1,23 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="{{ 'en' if language == 'en' else 'pt-BR' }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% set titles = {'login':'Entrar','register':'Crie sua conta','activate':'Defina sua senha','forgot':'Recuperar senha','reset':'Definir nova senha'} %}
 {% set actions = {'login':'Entrar','register':'Enviar link de cadastro','activate':'Criar conta','forgot':'Enviar link','reset':'Salvar senha'} %}
 {% set brand = config.get('ACCOUNT_BRAND', 'Portal') %}
-<title>{{ titles[mode] }} · {{ brand }}</title>
+<title>{{ t(titles[mode]) }} · {{ brand }}</title>
 <link rel="stylesheet" href="{{ url_for('accounts.static', filename='account.css') }}">
 </head>
 <body>
 <main class="access">
+  <nav class="language-switch" aria-label="{{ t('Idioma') }}">
+    {% for code, label, tag in [('pt', 'Português do Brasil', 'pt-BR'), ('en', 'English', 'en')] %}
+    <a href="{{ url_for('accounts.' + mode, lang=code) }}" lang="{{ tag }}" aria-label="{{ label }}" {% if language == code %}aria-current="true"{% endif %}>
+      <span class="flag flag-{{ code }}" aria-hidden="true"></span>{{ code|upper }}
+    </a>
+    {% endfor %}
+  </nav>
   <header class="identity">
     {% if config.get('ACCOUNT_LOGO') %}
     <img class="identity-logo" src="{{ url_for('static', filename=config['ACCOUNT_LOGO']) }}" alt="{{ brand }}">
@@ -19,14 +26,14 @@
     {% endif %}
   </header>
   <section class="account-card" aria-labelledby="account-title">
-    <h1 id="account-title">{{ titles[mode] }}</h1>
+    <h1 id="account-title">{{ t(titles[mode]) }}</h1>
     {% if mode == 'register' %}
-    <p class="intro">Confirme seu e-mail para definir sua senha.</p>
+    <p class="intro">{{ t('Confirme seu e-mail para definir sua senha.') }}</p>
     {% elif mode == 'forgot' %}
-    <p class="intro">Informe o e-mail da sua conta para receber um link de recuperação.</p>
+    <p class="intro">{{ t('Informe o e-mail da sua conta para receber um link de recuperação.') }}</p>
     {% endif %}
-    {% if message %}<p class="feedback" role="status">{{ message }}</p>{% endif %}
-    {% if error %}<p class="feedback error" role="alert">{{ error }}</p>{% endif %}
+    {% if message %}<p class="feedback" role="status">{{ t(message) }}</p>{% endif %}
+    {% if error %}<p class="feedback error" role="alert">{{ t(error) }}</p>{% endif %}
     {% set token_mode = mode in ('reset', 'activate') %}
     {% if not token_mode or token or not error %}
     <form method="post" action="{{ url_for('accounts.' + mode) }}">
@@ -34,28 +41,28 @@
       {% if token_mode %}
       <input type="hidden" id="resetToken" name="token" value="{{ token|default('') }}">
       {% else %}
-      <label for="email">E-mail</label>
+      <label for="email">{{ t('E-mail') }}</label>
       <input id="email" name="email" type="email" value="{{ email|default('') }}" maxlength="254" autocomplete="username" required>
       {% endif %}
       {% if mode == 'login' or token_mode %}
       <div class="label-row">
-        <label for="password">Senha</label>
-        {% if mode == 'login' %}<a href="{{ url_for('accounts.forgot') }}">Esqueci minha senha</a>{% endif %}
+        <label for="password">{{ t('Senha') }}</label>
+        {% if mode == 'login' %}<a href="{{ url_for('accounts.forgot') }}">{{ t('Esqueci minha senha') }}</a>{% endif %}
       </div>
       <input id="password" name="password" type="password" maxlength="256" autocomplete="{{ 'new-password' if token_mode else 'current-password' }}" {% if token_mode %}minlength="12" aria-describedby="password-help"{% endif %} required>
       {% endif %}
       {% if token_mode %}
-      <small id="password-help">Use pelo menos 12 caracteres.</small>
-      <label for="confirmation">Confirmar senha</label>
+      <small id="password-help">{{ t('Use pelo menos 12 caracteres.') }}</small>
+      <label for="confirmation">{{ t('Confirmar senha') }}</label>
       <input id="confirmation" name="confirmation" type="password" minlength="12" maxlength="256" autocomplete="new-password" required>
       {% endif %}
-      <button type="submit">{{ actions[mode] }}</button>
+      <button type="submit">{{ t(actions[mode]) }}</button>
     </form>
     {% endif %}
     {% if mode == 'login' and registration_enabled %}
-    <footer>Primeiro acesso? <a href="{{ url_for('accounts.register') }}">Criar conta</a></footer>
+    <footer>{{ t('Primeiro acesso?') }} <a href="{{ url_for('accounts.register') }}">{{ t('Criar conta') }}</a></footer>
     {% elif mode != 'login' %}
-    <footer><a href="{{ url_for('accounts.register' if mode == 'activate' and error and not token else 'accounts.login') }}">{{ 'Solicitar novo link' if mode == 'activate' and error and not token else 'Voltar ao login' }}</a></footer>
+    <footer><a href="{{ url_for('accounts.register' if mode == 'activate' and error and not token else 'accounts.login') }}">{{ t('Solicitar novo link' if mode == 'activate' and error and not token else 'Voltar ao login') }}</a></footer>
     {% endif %}
   </section>
 </main>

@@ -9,6 +9,8 @@ from datetime import timedelta
 from flask import Blueprint, abort, g, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from .language import translate
+
 DUMMY_HASH = generate_password_hash(secrets.token_hex(16))
 
 
@@ -67,7 +69,7 @@ class Accounts:
         if request.method not in ('GET', 'HEAD', 'OPTIONS'):
             token = request.headers.get('X-CSRF-Token') or request.form.get('csrf', '')
             if 'csrf' not in session or not hmac.compare_digest(token.encode(), session['csrf'].encode()):
-                abort(403, 'Sessão do formulário inválida. Recarregue a página.')
+                abort(403, translate('Sessão do formulário inválida. Recarregue a página.', self.language()))
 
     @staticmethod
     def private_response(response):
@@ -97,8 +99,20 @@ class Accounts:
         return True
 
     @staticmethod
-    def page(mode, **context):
-        return render_template('athena_access/account.html', mode=mode, **context)
+    def language():
+        requested = request.args.get('lang')
+        return requested if requested in ('pt', 'en') else ('en' if request.cookies.get('athena_lang') == 'en' else 'pt')
+
+    def page(self, mode, **context):
+        language = self.language()
+        response = self.app.make_response(render_template(
+            'athena_access/account.html', mode=mode, language=language,
+            t=lambda message: translate(message, language), **context
+        ))
+        if request.args.get('lang') in ('pt', 'en'):
+            response.set_cookie('athena_lang', language, max_age=31536000,
+                                secure=self.app.config['SESSION_COOKIE_SECURE'], samesite='Lax')
+        return response
 
     def login(self):
         if g.identity:
