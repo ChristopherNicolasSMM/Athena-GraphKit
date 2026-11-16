@@ -32,3 +32,15 @@ Documentacao oficial: https://developers.openai.com/plugins/deploy/submission
 - O plugin nao executa alteracoes automaticamente sem autorizacao: Skills de engenharia e operacao exigem apresentar decisoes e obter a aprovacao explicita do arquiteto.
 - O ZIP nao deve incluir credenciais, banco SQLite, ambiente virtual nem dados pessoais.
 - Este pacote nao promove automaticamente as branches `main` ou `producao` e nao altera PythonAnywhere.
+
+## Testar em um marketplace de desenvolvimento
+
+O repositorio inclui `.agents/plugins/marketplace.json`, que aponta para `./plugin`. Em clientes que suportam marketplaces locais (por exemplo, ChatGPT desktop/Codex), adicione o repositorio como fonte e instale o plugin `athena-graphkit`. Esse marketplace e exclusivo para desenvolvimento e nao equivale a publicacao no diretorio publico.
+
+Alternativa no Codex CLI, quando suportada:
+
+```bash
+codex plugin marketplace add ChristopherNicolasSMM/Athena-GraphKit --ref desenvolvimento
+```
+
+Apos configurar a fonte, atualize/reinicie o cliente para verificar se as quatro Skills aparecem. Consulte https://developers.openai.com/plugins/build/plugins para variacoes de instalacao por cliente.
