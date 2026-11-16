@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+workspace/projects/*.json
+saidas/
+venv/
+runtime/
+dist/
