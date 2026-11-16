@@ -10,6 +10,12 @@ Athena GraphKit é um editor local de documentação e diagramas.
 4. Instale dependências: `python -m pip install -r requirements.txt`.
 5. Execute `python portal.py` e abra http://127.0.0.1:5000.
 
+6. Na tela de login, escolha **Criar conta** no primeiro acesso. Após entrar,
+   o menu **Minha conta** fica no canto superior direito.
+
+Contas e projetos locais ficam em `workspace/local/athena.sqlite3`.
+Para trazer um projeto JSON anterior, use **Importar projeto** após entrar.
+
 Para uso direto sem portal: `python gerador.py --help`.
 
 ## Interface

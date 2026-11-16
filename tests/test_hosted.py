@@ -72,6 +72,24 @@ class HostedAccessTests(unittest.TestCase):
         self.assertIn(b'<html lang="pt-BR">', response.data)
         self.assertIn(b'Criar conta', self.request(self.other, '/conta/login').data)
 
+    def test_loopback_portal_requires_login_and_persists_accounts(self):
+        path = Path(self.directory.name) / 'local.sqlite3'
+        source = str(Path(__file__).resolve().parents[1] / 'portal.py')
+        app = runpy.run_path(source)['configure_local'](path)
+        with app.test_client() as client:
+            self.assertTrue(client.get('/').location.endswith('/conta/login'))
+            form = {'csrf': self.csrf(client, '/conta/cadastro'), 'email': 'local@example.test',
+                    'password': 'senha para criar conta', 'confirmation': 'senha para criar conta'}
+            result = client.post('/conta/cadastro', data=form)
+            self.assertEqual(result.status_code, 303)
+            self.assertNotIn('Secure', result.headers['Set-Cookie'])
+            self.assertIn('Minha conta', client.get('/').text)
+            self.assertIn('local@example.test', client.get('/compartilhamento/perfil').text)
+        reopened = runpy.run_path(source)['configure_local'](path)
+        self.assertEqual(app.secret_key, reopened.secret_key)
+        with reopened.test_client() as client:
+            self.assertEqual(self.login(client, 'local', 'senha para criar conta').status_code, 302)
+
     def test_on_site_registration_needs_no_smtp(self):
         self.configure(recovery=False)
         self.owner, self.other = (self.app.test_client() for _ in range(2))

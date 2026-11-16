@@ -1,4 +1,5 @@
 """SQLite storage for accounts, memberships and resource grants."""
+import secrets
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -74,6 +75,17 @@ class AccessStore:
                 yield db
         finally:
             db.close()
+
+    def local_session_key(self):
+        """Persist the loopback portal's signing key in its own database."""
+        with self.connect(write=True) as db:
+            db.execute('CREATE TABLE IF NOT EXISTS local_settings (name TEXT PRIMARY KEY, value TEXT NOT NULL)')
+            row = db.execute("SELECT value FROM local_settings WHERE name='session_key'").fetchone()
+            if row:
+                return row['value']
+            key = secrets.token_urlsafe(48)
+            db.execute("INSERT INTO local_settings VALUES ('session_key',?)", (key,))
+            return key
 
     @staticmethod
     def level(db, uid, scope, resource):

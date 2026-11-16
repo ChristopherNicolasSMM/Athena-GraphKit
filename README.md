@@ -65,7 +65,19 @@ python -m pip install -r requirements.txt
 python portal.py
 ```
 
-Abra **http://127.0.0.1:5000**.
+Abra **http://127.0.0.1:5000**. No primeiro acesso local, escolha **Criar conta**.
+Depois de entrar, use **Minha conta** no canto superior direito para abrir o
+perfil, consultar projetos compartilhados ou encerrar a sessão.
+
+No VS Code, selecione o Python do ambiente virtual com **Python: Select Interpreter**
+e execute **Athena Studio: portal local** com **F5**. Essa configuração inicia
+`portal.py` a partir da raiz do projeto.
+
+A execução local usa o mesmo fluxo de contas e projetos do ambiente publicado.
+Os dados locais ficam em `workspace/local/athena.sqlite3` e têm vida própria
+em relação ao banco configurado no PythonAnywhere. Projetos antigos em
+`workspace/projects/` podem ser adicionados à sua conta com **Importar projeto**,
+selecionando um JSON por vez.
 
 ### Execução sem portal
 
@@ -205,7 +217,7 @@ athena-graphkit/
 ├── portal/                   # Templates, arquivos estáticos e logo original
 ├── temas/                    # Paletas dos diagramas
 ├── entradas/                 # Exemplos de Markdown e Mermaid
-├── workspace/projects/       # Projetos locais
+├── workspace/                # Banco local e projetos JSON legados
 ├── manuais/                  # Guias disponíveis no Studio
 ├── docs/releases/            # Histórico de versões
 ├── deploy/                   # Publicação no PythonAnywhere
@@ -267,7 +279,7 @@ O projeto está em fase de **lançamento e testes locais**. Pontos conhecidos: c
 
 Encontrou um problema, quer sugerir um novo componente ou melhorar a documentação? Ao reportar um erro, inclua a versão, o tipo de diagrama, o código Mermaid mínimo para reproduzi-lo e a mensagem exibida no navegador ou terminal.
 
-Não há necessidade de alterar os projetos existentes para colaborar com o código: preserve `workspace/projects/` antes de testar versões novas.
+Não há necessidade de alterar os projetos existentes para colaborar com o código: preserve `workspace/` antes de testar versões novas.
 
 ## Autoria
 
@@ -291,7 +303,7 @@ abra `iniciar_portatil.bat` no Windows x64 ou execute
 
 O pacote inclui Python, Flask, Mermaid, Graphviz (`dot`) e Cairo. A primeira
 execução ajusta os caminhos do runtime para a pasta de extração. Para mudar a
-instalação de lugar, extraia novamente o pacote e copie `workspace/projects/`.
+instalação de lugar, extraia novamente o pacote e copie `workspace/` com o portal fechado.
 O pacote Linux requer um sistema x64 compatível com a glibc do build.
 Windows ARM64, Linux ARM64 e Linux musl exigem builds próprios.
 

@@ -343,7 +343,7 @@ def render_graphviz():
 @app.errorhandler(413)
 def error(e): return jsonify({'error':getattr(e,'description',str(e))}),e.code
 
-def configure_hosted(config, *, reset_sender=None, registration_sender=None):
+def configure_hosted(config, *, reset_sender=None, registration_sender=None, secure_cookies=True):
     """Enable the hosted mode once, before Flask starts serving requests."""
     global studio
     from athena_access import AccessStore, Accounts
@@ -352,7 +352,7 @@ def configure_hosted(config, *, reset_sender=None, registration_sender=None):
     from athena_access.studio import StudioProjects
 
     app.secret_key = config['ATHENA_SECRET_KEY']
-    app.config.update(SESSION_COOKIE_SECURE=True, ACCOUNT_BRAND='Athena GraphKit',
+    app.config.update(SESSION_COOKIE_SECURE=secure_cookies, ACCOUNT_BRAND='Athena GraphKit',
                       ACCOUNT_LOGO='branding/athena-logo-dark.png')
     if config.get('ATHENA_TRUSTED_HOST'):
         app.config['TRUSTED_HOSTS'] = [config['ATHENA_TRUSTED_HOST']]
@@ -379,11 +379,28 @@ def configure_hosted(config, *, reset_sender=None, registration_sender=None):
     return app
 
 
+def configure_local(database=None):
+    """Enable the same account and project routes for the loopback portal."""
+    from athena_access import AccessStore
+
+    database = database or ROOT / 'workspace' / 'local' / 'athena.sqlite3'
+    store = AccessStore(database)
+    portal = configure_hosted({
+        'ATHENA_DATABASE': database,
+        'ATHENA_SECRET_KEY': store.local_session_key(),
+    }, secure_cookies=False)
+    portal.config['TRUSTED_HOSTS'] = ['127.0.0.1', 'localhost']
+    return portal
+
+
 if os.getenv('ATHENA_CONFIG'):
     with open(os.environ['ATHENA_CONFIG'], encoding='utf-8') as file:
         configure_hosted(json.load(file))
 
 
 if __name__=='__main__':
-    print('Athena GraphKit Portal: http://127.0.0.1:5000')
-    app.run(host='127.0.0.1',port=int(os.getenv('ATHENA_PORT','5000')),debug=False)
+    if studio is None:
+        configure_local()
+    port = int(os.getenv('ATHENA_PORT', '5000'))
+    print(f'Athena GraphKit Portal: http://127.0.0.1:{port}')
+    app.run(host='127.0.0.1', port=port, debug=False)
