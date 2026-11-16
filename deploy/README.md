@@ -36,7 +36,12 @@ SQLite e começa com um espaço vazio. Importe os projetos que pretende publicar
 3. Substitua o conteúdo do **WSGI configuration file** pelo conteúdo de
    `deploy/wsgi.py`. O padrão é `~/athena-deploy`. Caso use outra pasta,
    ajuste `ATHENA_DEPLOY_HOME` no WSGI e use o mesmo caminho em `--base`.
-   O WSGI carrega o código e as dependências da revisão ativa.
+   O WSGI carrega a revisão ativa ou, antes da primeira publicação, o checkout
+   em `~/Athena-GraphKit`. Use `ATHENA_REPO` no WSGI se o checkout estiver em
+   outro caminho. O primeiro start cria o venv se necessário e instala os
+   pacotes. Os próximos starts reutilizam o ambiente pronto. Deixe o campo
+   **Virtualenv** na aba **Web** vazio para que o WSGI selecione o ambiente
+   da revisão. Use a mesma versão Python no painel e no atualizador.
 4. Execute a primeira publicação, usando o caminho WSGI mostrado no painel.
 
    ```bash
@@ -50,9 +55,8 @@ SQLite e começa com um espaço vazio. Importe os projetos que pretende publicar
 
    ```bash
    export ATHENA_CONFIG="$HOME/athena-deploy/app.json"
-   export PYTHONPATH="$HOME/athena-deploy/current/.deps"
    cd "$HOME/athena-deploy/current"
-   python3.12 -m flask --app portal access user responsavel@exemplo.com
+   ./.venv/bin/python -m flask --app portal access user responsavel@exemplo.com
    ```
 
    Abra o domínio HTTPS e entre com a conta criada. Teste a recuperação
@@ -72,8 +76,9 @@ python3.12 /home/SEU_USUARIO/Athena-GraphKit/deploy/update.py --repo /home/SEU_U
 
 A checagem usa `git fetch`, aceita avanço direto da branch com
 `git merge --ff-only` e exige checkout sem alterações locais. Com uma
-nova revisão, prepara uma pasta de release, instala dependências quando
-a lista mudar, testa a inicialização e troca o ponteiro `current`.
+nova revisão, prepara uma pasta de release, cria ou reutiliza um venv conforme
+a versão do Python e o `requirements.txt`, testa com o Python desse ambiente
+e troca o ponteiro `current`.
 Em seguida atualiza a data do arquivo WSGI para o PythonAnywhere recarregar
 os workers. Quando a revisão já está ativa, registra a verificação e
 não solicita recarga. Falhas de preparação preservam a release ativa.
@@ -88,9 +93,13 @@ A recarga solicitada aparece primeiro em `deploy.log`. Confirme a
 inicialização em `startup.log`, consulte os logs da aba **Web** quando
 necessário e teste `/healthz` pelo endereço HTTPS. Faça backups de
 `data/` com SQLite Online Backup ou com a aplicação parada.
-As pastas `releases/` e `deps/` conservam versões anteriores.
+As pastas `releases/` e `venvs/` conservam versões anteriores.
 Remova revisões antigas apenas depois de confirmar a versão ativa
 e preservar a revisão anterior.
+
+Se já publicou uma revisão anterior, faça `git pull --ff-only`, atualize o
+conteúdo do WSGI e reinicie a Always-on task uma vez para carregar o novo
+atualizador. O SQLite e o `app.json` continuam nos caminhos existentes.
 
 Referências do provedor ([recarga WSGI](https://help.pythonanywhere.com/pages/ReloadWebApp/),
 [Always-on tasks](https://help.pythonanywhere.com/pages/AlwaysOnTasks/) e

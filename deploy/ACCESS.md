@@ -37,12 +37,12 @@ revogar a concessão. A pessoa pode continuar tendo acesso por outro vínculo.
 No diretório `current`, com o ambiente do [deploy](README.md) configurado:
 
 ```bash
-python3.12 -m flask --app portal access user pessoa@exemplo.com
-python3.12 -m flask --app portal access organization empresa "Empresa"
-python3.12 -m flask --app portal access group engenharia "Engenharia" empresa
-python3.12 -m flask --app portal access member organization empresa pessoa@exemplo.com
-python3.12 -m flask --app portal access member group engenharia pessoa@exemplo.com
-python3.12 -m flask --app portal access import-project pessoa@exemplo.com /caminho/projeto.json
+./.venv/bin/python -m flask --app portal access user pessoa@exemplo.com
+./.venv/bin/python -m flask --app portal access organization empresa "Empresa"
+./.venv/bin/python -m flask --app portal access group engenharia "Engenharia" empresa
+./.venv/bin/python -m flask --app portal access member organization empresa pessoa@exemplo.com
+./.venv/bin/python -m flask --app portal access member group engenharia pessoa@exemplo.com
+./.venv/bin/python -m flask --app portal access import-project pessoa@exemplo.com /caminho/projeto.json
 ```
 
 Use `access member ... --remove` para remover uma participação.

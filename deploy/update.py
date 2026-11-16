@@ -1,7 +1,6 @@
 """Fast-forward the source mirror, stage and validate a release, then reload WSGI."""
 import argparse
 import fcntl
-import hashlib
 import logging
 import os
 import subprocess
@@ -11,6 +10,7 @@ import tempfile
 import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from runtime import ensure_venv, site_packages
 
 LOG = logging.getLogger('athena.deploy')
 SMOKE = """
@@ -37,19 +37,6 @@ def run(*args, cwd, env=None, timeout=120):
     return result.stdout.strip()
 
 
-def dependencies(base, release):
-    requirements = release / 'requirements.txt'
-    digest = hashlib.sha256(requirements.read_bytes() + sys.version.encode()).hexdigest()[:24]
-    destination = base / 'deps' / digest
-    if not destination.is_dir():
-        with tempfile.TemporaryDirectory(dir=destination.parent) as temporary:
-            staging = Path(temporary) / 'packages'
-            run(sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check', '--target',
-                str(staging), '-r', str(requirements), cwd=release, timeout=600)
-            staging.rename(destination)
-    return destination
-
-
 def stage(base, repo, revision):
     destination = base / 'releases' / revision
     if destination.is_dir():
@@ -61,7 +48,6 @@ def stage(base, repo, revision):
         run('git', 'archive', '--format=tar', '-o', str(archive), revision, cwd=repo)
         with tarfile.open(archive) as source:
             source.extractall(checkout, filter='data')
-        (checkout / '.deps').symlink_to(dependencies(base, checkout), target_is_directory=True)
         checkout.rename(destination)
     return destination
 
@@ -95,8 +81,17 @@ def update(base, repo, branch, wsgi):
             return
         LOG.info('Preparando revisão %s.', revision)
         release = stage(base, repo, revision)
-        env = os.environ | {'ATHENA_CONFIG': str(base / 'app.json'), 'PYTHONPATH': str(release / '.deps')}
-        run(sys.executable, '-c', SMOKE, cwd=release, env=env)
+        venv = ensure_venv(base, release, interpreter=sys.executable, logger=LOG)
+        selected = release / '.venv'
+        if not selected.is_symlink():
+            selected.symlink_to(venv, target_is_directory=True)
+        legacy = release / '.deps'
+        if not legacy.is_symlink() and not legacy.exists():
+            legacy.symlink_to(site_packages(venv), target_is_directory=True)
+        env = os.environ | {'ATHENA_CONFIG': str(base / 'app.json')}
+        env.pop('PYTHONPATH', None)
+        env.pop('PYTHONHOME', None)
+        run(str(venv / 'bin' / 'python'), '-c', SMOKE, cwd=release, env=env)
         run('git', 'merge', '--ff-only', revision, cwd=repo)
         marker.write_text(revision + '\n', encoding='ascii')
         switch(base, release)
@@ -122,7 +117,7 @@ def main():
     args = parser.parse_args()
     base, repo, wsgi = (path.resolve() for path in (args.base, args.repo, args.wsgi))
     os.umask(0o077)
-    for folder in ('logs', 'deps', 'releases'):
+    for folder in ('logs', 'venvs', 'releases'):
         (base / folder).mkdir(parents=True, exist_ok=True)
     handler = RotatingFileHandler(base / 'logs' / 'deploy.log', maxBytes=2_000_000,
                                   backupCount=3, encoding='utf-8')
