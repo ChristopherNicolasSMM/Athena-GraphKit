@@ -1,0 +1,12 @@
+flowchart TB
+    A[Portal de Compras]
+    B{Tipo de integracao}
+    C[API RAP]
+    D[RFC legado]
+    E[Clean Core]
+    F[Revisar arquitetura]
+    A --> B
+    B -->|API| C
+    B -->|RFC| D
+    C ==> E
+    D -.-> F

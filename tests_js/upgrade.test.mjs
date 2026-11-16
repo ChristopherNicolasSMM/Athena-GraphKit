@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {flowCode,parseFlow,recoverLegacyFlow,BPMN_COMPONENTS,validateBpmnModel} from '../portal/static/model.js';
+const old='flowchart LR\n  A <-- B B';
+assert.equal(recoverLegacyFlow(old),'flowchart LR\n  B --> A');
+const repaired=parseFlow(old);assert.equal(repaired.edges[0].from,'B');assert.equal(repaired.edges[0].to,'A');
+const nodes=[{id:'start',type:'start',label:'Início'},{id:'task',type:'userTask',label:'Revisar'},{id:'end',type:'end',label:'Fim'}];
+const edges=[{from:'start',to:'task',direction:'forward',kind:'sequenceFlow'},{from:'task',to:'end',direction:'forward',kind:'sequenceFlow'}];
+assert.equal(validateBpmnModel(nodes,edges).length,0);
+assert.ok(validateBpmnModel(nodes,[{from:'end',to:'task',kind:'sequenceFlow'}]).length);
+assert.equal(BPMN_COMPONENTS.userTask,'Tarefa humana');
+const code=flowCode(nodes,edges,'bpmn');assert.match(code,/flowchart LR/);assert.match(code,/start --> task/);
+assert.equal(parseFlow(code).edges.length,2);
+console.log('Athena v2.8 upgrade checks OK');

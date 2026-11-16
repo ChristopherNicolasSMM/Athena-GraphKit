@@ -1,0 +1,11 @@
+{
+  "name": "athena-graphkit",
+  "version": "1.4.2",
+  "description": "Athena GraphKit - Engineering diagrams. Shared understanding.",
+  "skills": [
+    "skills/athena-graphkit"
+  ],
+  "author": "Christopher N. S. M. Mauricio",
+  "icon": "assets/icon.png",
+  "logo": "assets/logo.png"
+}

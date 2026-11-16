@@ -1,0 +1,11 @@
+name: athena-portable
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - flask>=3,<4
+  - python-graphviz>=0.20,<1
+  - cairosvg>=2.7,<3
+  - graphviz
+  - cairo
+  - pip

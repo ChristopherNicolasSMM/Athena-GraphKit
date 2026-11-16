@@ -1,0 +1,37 @@
+{
+  "graph": {
+    "bgcolor": "#FFFFFF",
+    "pad": "0.4",
+    "nodesep": "0.6",
+    "ranksep": "0.95",
+    "fontname": "Arial",
+    "fontcolor": "#223548"
+  },
+  "node": {
+    "style": "rounded,filled",
+    "fillcolor": "#F5F9FC",
+    "color": "#0070F2",
+    "fontcolor": "#223548",
+    "fontname": "Arial",
+    "fontsize": "12",
+    "penwidth": "1.6",
+    "margin": "0.2,0.15"
+  },
+  "edge": {
+    "color": "#0070F2",
+    "fontcolor": "#223548",
+    "fontname": "Arial",
+    "fontsize": "10",
+    "penwidth": "1.8",
+    "arrowsize": "0.8"
+  },
+  "cluster": {
+    "style": "rounded,filled",
+    "color": "#0070F2",
+    "fillcolor": "#EDF6FF",
+    "fontcolor": "#223548",
+    "fontname": "Arial",
+    "fontsize": "13",
+    "margin": "18"
+  }
+}

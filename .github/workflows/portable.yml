@@ -1,0 +1,68 @@
+name: Pacotes portáteis
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            name: linux-x64
+            archive: tar.gz
+          - runner: windows-2022
+            name: windows-x64
+            archive: zip
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: packaging/environment.yml
+          init-shell: bash
+      - name: Preparar e validar runtime
+        shell: bash -el {0}
+        run: |
+          python -m pip install "mcp>=1,<3"
+          pack_venv="$RUNNER_TEMP/athena-pack"
+          python -m venv "$pack_venv"
+          pack_python="$pack_venv/bin/python"
+          if [ "$RUNNER_OS" = Windows ]; then
+            pack_python="$pack_venv/Scripts/python.exe"
+          fi
+          "$pack_python" -m pip install conda-pack==0.8.1 "setuptools<81"
+          python -m unittest discover -s tests -v
+          node --test tests_js/*.test.mjs
+          mkdir -p dist app
+          git archive HEAD | tar -x -C app
+          python packaging/runtime_manifest.py "$CONDA_PREFIX" app/runtime-notices
+          "$pack_python" -c 'from conda_pack.cli import main; main()' --prefix "$CONDA_PREFIX" --format no-archive --output app/runtime
+          python packaging/archive.py app "dist/athena-graphkit-${{ matrix.name }}.${{ matrix.archive }}"
+      - name: Extrair o pacote em outro caminho
+        shell: bash -el {0}
+        run: |
+          mkdir -p 'teste portátil'
+          python packaging/archive.py --extract "dist/athena-graphkit-${{ matrix.name }}.${{ matrix.archive }}" 'teste portátil'
+      - if: runner.os == 'Linux'
+        name: Testar launcher Linux
+        shell: bash
+        run: cd 'teste portátil' && ./iniciar_portatil.sh --check
+      - if: runner.os == 'Windows'
+        name: Testar launcher Windows
+        shell: pwsh
+        run: |
+          Set-Location 'teste portátil'
+          cmd /c iniciar_portatil.bat --check
+          exit $LASTEXITCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: athena-graphkit-${{ matrix.name }}
+          path: dist/

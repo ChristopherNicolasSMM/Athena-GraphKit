@@ -1,0 +1,8 @@
+{
+  "name": "athena-graphkit",
+  "version": "1.4.2",
+  "description": "Athena GraphKit",
+  "author": "Christopher N. S. M. Mauricio",
+  "icon": "assets/icon.png",
+  "logo": "assets/logo.png"
+}
