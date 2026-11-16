@@ -1,14 +1,50 @@
 {
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "athena-graphkit",
   "version": "1.4.4",
-  "description": "Athena GraphKit - Engineering diagrams, user guidance, architecture and operations knowledge.",
-  "skills": [
-    "skills/athena-graphkit",
-    "skills/athena-user",
-    "skills/athena-developer",
-    "skills/athena-operations"
+  "description": "Skills para diagramas de engenharia, orientacao de usuarios, arquitetura e operacao do Athena GraphKit.",
+  "author": {
+    "name": "Christopher N. S. M. Mauricio"
+  },
+  "homepage": "https://github.com/ChristopherNicolasSMM/Athena-GraphKit",
+  "repository": "https://github.com/ChristopherNicolasSMM/Athena-GraphKit",
+  "license": "MIT",
+  "keywords": [
+    "diagramas",
+    "mermaid",
+    "graphviz",
+    "documentacao",
+    "arquitetura",
+    "desenvolvimento"
   ],
-  "author": "Christopher N. S. M. Mauricio",
-  "icon": "assets/icon.png",
-  "logo": "assets/logo.png"
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Athena GraphKit",
+        "shortDescription": "Diagramas e engenharia",
+        "longDescription": "Oriente o uso do Athena GraphKit Studio, compreenda sua arquitetura, diagnostique instalacoes e gere diagramas e documentacao com os recursos fornecidos. As Skills sao orientacoes; nao conectam automaticamente um servidor MCP ou uma instalacao remota do Athena. Alteracoes no codigo exigem proposta e aprovacao do arquiteto.",
+        "developerName": "Christopher N. S. M. Mauricio",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Gerar diagramas compatíveis",
+          "Orientar usuários do Studio",
+          "Documentar a arquitetura",
+          "Apoiar diagnósticos"
+        ],
+        "websiteURL": "https://github.com/ChristopherNicolasSMM/Athena-GraphKit",
+        "supportURL": "https://github.com/ChristopherNicolasSMM/Athena-GraphKit/issues",
+        "defaultPrompt": [
+          "Como criar um fluxograma no Athena GraphKit?",
+          "Explique a arquitetura e os módulos do Athena.",
+          "Como diagnosticar problemas na instalação do Athena?"
+        ],
+        "composerIcon": "./assets/icon.png",
+        "logo": "./assets/logo.png"
+      },
+      "onboardingSkill": "./skills/athena-user/SKILL.md",
+      "publication": {
+        "release_notes": "Primeiro pacote publico com quatro Skills: diagramas, usuario, desenvolvimento e operacoes. MCP remoto nao incluido."
+      }
+    }
+  }
 }
