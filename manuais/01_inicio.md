@@ -1,6 +1,6 @@
 # Início rápido
 
-Athena GraphKit Studio 1.4.3 permite criar e compartilhar diagramas e documentação. O mesmo Studio pode rodar localmente ou em um servidor.
+Athena GraphKit Studio 1.4.4 permite criar e compartilhar diagramas e documentação. O mesmo Studio pode rodar localmente ou em um servidor.
 
 ## Instalação
 

@@ -179,7 +179,7 @@ class HostedAccessTests(unittest.TestCase):
         self.assertEqual(self.mutate(self.owner, '/api/projects', json={'id':'projeto','title':'Projeto da equipe'}).status_code, 201)
         self.assertEqual(self.grant('group', 'dev', 'visualizar').status_code, 302)
         home = self.request(self.member, '/').text
-        self.assertIn('STUDIO · v1.4.3', home)
+        self.assertIn('STUDIO · v1.4.4', home)
         self.assertIn('/compartilhamento/#recebidos', home)
         self.assertIn('Encerrar sessão', home)
         profile = self.request(self.member, '/compartilhamento/perfil').text

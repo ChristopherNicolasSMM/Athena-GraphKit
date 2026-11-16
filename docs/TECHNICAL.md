@@ -1,6 +1,6 @@
 # Referência técnica do Athena GraphKit Studio
 
-Esta referência acompanha a branch `desenvolvimento` da série 1.4.3.
+Esta referência descreve o Athena GraphKit Studio 1.4.4.
 Para operação, consulte o [deploy no PythonAnywhere](../deploy/README.md)
 e o [modelo de acesso](../deploy/ACCESS.md).
 
