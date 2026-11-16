@@ -74,6 +74,8 @@ python gerador.py --arquivo entradas/integracao_sap.md --tema dark --formato svg
 python gerador.py --pasta entradas --tema corporativo --formato png
 ```
 
+Em uma instalação a partir do código-fonte, execute a CLI com `python gerador.py` e o MCP com `python mcp_server.py`, no ambiente virtual do projeto. Na distribuição portátil, use o inicializador com `--cli` ou `--mcp`.
+
 A CLI usa o conversor Python/Graphviz e atende ao subconjunto de **`flowchart`/`graph`** suportado pelo parser. Para sequência, ER, classes e C4, use o editor e a prévia Mermaid no portal.
 
 ---
@@ -193,22 +195,24 @@ O **Athena Core** fica separado da interface Flask, permitindo automação por l
 ```text
 athena-graphkit/
 ├── portal.py                 # Aplicação Flask
-├── iniciar_portal.ps1        # Inicialização local no Windows
 ├── gerador.py                # CLI de geração
+├── mcp_server.py             # Servidor MCP opcional
+├── iniciar_portal.ps1        # Inicialização local no Windows
+├── iniciar_portatil.*        # Inicializadores da distribuição portátil
 ├── athena/                   # API Python reutilizável
-├── core/                     # Leitor, parser, temas e renderizador
-├── portal/                   # Interface e arquivos estáticos
-│   └── static/branding/      # Logos, ícones e favicon
-├── temas/                    # Paletas Dark, Corporativo e SAP Fiori
-├── entradas/                 # Exemplos de Markdown/Mermaid
-├── saidas/                   # Diagramas exportados
+├── athena_access/            # Contas, permissões e compartilhamento
+├── core/                     # Leitura, parsing e renderização
+├── portal/                   # Templates, arquivos estáticos e logo original
+├── temas/                    # Paletas dos diagramas
+├── entradas/                 # Exemplos de Markdown e Mermaid
 ├── workspace/projects/       # Projetos locais
-├── manuais/                  # Guias Markdown consultáveis no portal
+├── manuais/                  # Guias disponíveis no Studio
+├── docs/releases/            # Histórico de versões
+├── deploy/                   # Publicação no PythonAnywhere
+├── packaging/                # Empacotamento e verificação da distribuição
 ├── libs/cairo/               # Local opcional para DLLs Cairo
-├── plugin/                   # Skill e metadados ChatGPT
-├── mcp_server.py             # Integração MCP opcional
-├── tests/ e tests_js/        # Testes automatizados
-└── README.md
+├── plugin/                   # Skill e metadados de integração
+└── tests/ e tests_js/        # Testes automatizados
 ```
 
 ### Skill ChatGPT e MCP
@@ -255,7 +259,7 @@ Se a interface parecer desatualizada, recarregue com `Ctrl+Shift+R`. Se o portal
 
 ## Versão e status
 
-**Versão de lançamento: `1.4.3`** — menu de conta e melhorias na navegação de compartilhamento. Veja [`RELEASE_NOTES_1.4.3.md`](RELEASE_NOTES_1.4.3.md) para o histórico do lançamento.
+**Versão de lançamento: `1.4.3`** — menu de conta e melhorias na navegação de compartilhamento. Veja [notas da versão 1.4.3](docs/releases/RELEASE_NOTES_1.4.3.md) para o histórico do lançamento.
 
 O projeto está em fase de **lançamento e testes locais**. Pontos conhecidos: cobertura Mermaid desigual entre portal e CLI; BPMN simplificado; tradução parcial; e integração MCP/ChatGPT dependente de configuração e validação no ambiente de destino.
 

@@ -8,7 +8,7 @@ from zipfile import ZipFile
 
 import portal
 
-root = Path(__file__).resolve().parent
+root = Path(__file__).resolve().parents[1]
 dot = shutil.which("dot")
 if dot is None or (root / "runtime") not in Path(dot).resolve().parents:
     raise SystemExit("dot portátil indisponível")
