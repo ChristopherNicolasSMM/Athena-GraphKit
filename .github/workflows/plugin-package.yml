@@ -1,0 +1,49 @@
+name: Athena Plugin ZIP
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [desenvolvimento]
+    paths:
+      - 'plugin/**'
+      - 'packaging/plugin_release.py'
+      - 'AGENTS.md'
+      - 'docs/**'
+      - 'deploy/*.md'
+      - 'manuais/*.md'
+      - 'tests/test_skills_manifest.py'
+      - '.github/workflows/plugin-package.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Validate and package public skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Validate manifest and governance
+        run: python -m unittest discover -s tests -p 'test_skills_manifest.py' -v
+      - name: Build ZIP for public submission
+        run: python packaging/plugin_release.py --output dist/athena-graphkit-plugin-1.4.4.zip
+      - name: Check archive contents
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          p = Path("dist/athena-graphkit-plugin-1.4.4.zip")
+          with ZipFile(p) as z:
+              assert z.testzip() is None
+              assert "plugin.json" in z.namelist()
+              assert sum(n.endswith("/SKILL.md") for n in z.namelist()) == 4
+              print("Validated:", p, p.stat().st_size, "bytes")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: athena-graphkit-plugin-1.4.4
+          path: dist/athena-graphkit-plugin-1.4.4.zip
+          if-no-files-found: error
