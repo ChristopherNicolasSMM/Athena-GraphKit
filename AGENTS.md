@@ -32,3 +32,13 @@ Este arquivo governa assistentes de IA que analisam, orientam ou propõem altera
 - Diagramas e exportação: `plugin/skills/athena-graphkit/SKILL.md`.
 
 A Skill explica como trabalhar; a documentação e o código versionado são a fonte de verdade sobre o comportamento. Em conflito, verificar código/testes e comunicar discrepâncias antes de agir.
+
+## Fluxo obrigatório de branches
+
+O repositório mantém três branches de ciclo de vida:
+
+1. `desenvolvimento`: destino padrão de toda alteração aprovada (código, testes, documentação, Skills e configurações versionadas). Validar nesta branch.
+2. `main`: receber somente mudanças revisadas, testadas e aprovadas como versão estável. Não promover automaticamente.
+3. `producao`: receber a versão estável somente quando o arquiteto solicitar explicitamente a publicação no PythonAnywhere. Nunca atualizar automaticamente em consequência de mudanças na `main`.
+
+Sempre confirmar branch de destino antes de gravar. Branches temporárias de trabalho ou PRs, quando necessários, devem ter como destino `desenvolvimento`, jamais `main` por padrão. Não fazer merge, deploy ou movimentar refs entre estes estágios sem autorização específica.
