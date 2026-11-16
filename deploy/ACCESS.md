@@ -47,7 +47,12 @@ No diretório `current`, com o ambiente do [deploy](README.md) configurado:
 
 Use `access member ... --remove` para remover uma participação.
 Use `access disable pessoa@exemplo.com` para desativar uma conta ou
-`--enable` para reativá-la. A criação de contas é controlada pelo operador.
+`--enable` para reativá-la. Na tela de login, **Criar conta** envia um link de confirmação ao e-mail informado.
+O link expira em 30 minutos e funciona uma vez. A conta é criada somente
+quando a pessoa confirma o e-mail e define a senha. Novas contas começam sem
+vínculos com organizações, grupos ou projetos de terceiros.
+O cadastro usa o SMTP configurado no deploy. Para cadastro exclusivo pelo
+operador, ajuste `"ATHENA_ALLOW_REGISTRATION": false` no `app.json` e recarregue.
 O link de recuperação é entregue por e-mail, expira em 30 minutos, é usado
 uma vez e a troca de senha encerra as sessões anteriores.
 
@@ -56,7 +61,7 @@ uma vez e a troca de senha encerra as sessões anteriores.
 Copie o pacote `athena_access/`, preservando seus templates e arquivos
 estáticos. Inicialize `AccessStore(caminho_sqlite)` e
 `Accounts(app, store, enviar_recuperacao, public_endpoints={...})`.
-Defina `app.secret_key`, `SESSION_COOKIE_SECURE=True` para HTTPS e, se
+Passe `send_registration(email, caminho)` para habilitar o cadastro por e-mail. Defina `app.secret_key`, `SESSION_COOKIE_SECURE=True` para HTTPS e, se
 necessário, `ACCOUNT_BRAND` e `ACCOUNT_HOME`. Injete
 `enviar_recuperacao(email, caminho)` ou use `smtp_delivery`.
 A função recebe um caminho relativo. Combine com uma origem HTTPS configurada.

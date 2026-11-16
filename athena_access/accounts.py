@@ -1,6 +1,7 @@
 """Flask blueprint for login, logout, password recovery and CSRF protection."""
 import hashlib
 import hmac
+import re
 import secrets
 import time
 from datetime import timedelta
@@ -18,16 +19,17 @@ def password_hash(password):
 
 
 class Accounts:
-    def __init__(self, app, store, send_reset, *, public_endpoints=()):
+    def __init__(self, app, store, send_reset, *, send_registration=None, public_endpoints=()):
         self.app = app
         self.store = store
         self.send_reset = send_reset
+        self.send_registration = send_registration
         self.public_endpoints = {'static', 'accounts.static', *public_endpoints}
         if not app.secret_key or len(app.secret_key) < 32:
             raise ValueError('Configure uma chave de sessão de pelo menos 32 caracteres.')
         app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax',
                           PERMANENT_SESSION_LIFETIME=timedelta(hours=12))
-        app.context_processor(lambda: {'csrf_token': self.csrf_token})
+        app.context_processor(lambda: {'csrf_token': self.csrf_token, 'registration_enabled': send_registration is not None})
         app.before_request(self.protect)
         app.after_request(self.private_response)
         bp = Blueprint('accounts', __name__, template_folder='templates', static_folder='static', url_prefix='/conta')
@@ -35,6 +37,9 @@ class Accounts:
         bp.add_url_rule('/sair', 'logout', self.logout, methods=['POST'])
         bp.add_url_rule('/recuperar', 'forgot', self.forgot, methods=['GET', 'POST'])
         bp.add_url_rule('/redefinir', 'reset', self.reset, methods=['GET', 'POST'])
+        if self.send_registration is not None:
+            bp.add_url_rule('/cadastro', 'register', self.register, methods=['GET', 'POST'])
+            bp.add_url_rule('/ativar', 'activate', self.activate, methods=['GET', 'POST'])
         app.register_blueprint(bp)
 
     @staticmethod
@@ -112,6 +117,70 @@ class Accounts:
         session.clear()
         session.update(uid=user['id'], epoch=user['epoch'], permanent=True)
         return redirect(self.app.config.get('ACCOUNT_HOME', '/'))
+
+    def register(self):
+        if g.identity:
+            return redirect(self.app.config.get('ACCOUNT_HOME', '/'))
+        if request.method == 'GET':
+            return self.page('register')
+        email = request.form.get('email', '').strip().lower()
+        if len(email) > 254 or not re.fullmatch(r'[^@\s]{1,100}@[^@\s.]+(?:\.[^@\s.]+)+', email):
+            return self.page('register', email=email, error='Informe um e-mail válido.'), 400
+        if self.allowed('register', email, limit=3, ip_limit=20):
+            token = secrets.token_urlsafe(32)
+            digest = hashlib.sha256(token.encode()).hexdigest()
+            now = int(time.time())
+            with self.store.connect(write=True) as db:
+                db.execute('DELETE FROM account_registrations WHERE expires<=?', (now,))
+                available = not db.execute('SELECT 1 FROM users WHERE email=?', (email,)).fetchone()
+                if available:
+                    db.execute("""INSERT INTO account_registrations VALUES (?,?,?)
+                                  ON CONFLICT(email) DO UPDATE SET digest=excluded.digest,expires=excluded.expires""",
+                               (digest, email, now + 1800))
+            if available:
+                try:
+                    self.send_registration(email, url_for('accounts.activate') + '#' + token)
+                except Exception:
+                    self.app.logger.error('Falha na entrega de e-mail de cadastro.')
+        return self.page('register', message='Se o endereço puder ser cadastrado, você receberá um link para definir sua senha.')
+
+    def activate(self):
+        if g.identity:
+            return redirect(self.app.config.get('ACCOUNT_HOME', '/'))
+        if request.method == 'GET':
+            return self.page('activate')
+        token = request.form.get('token', '')
+        if not 32 <= len(token) <= 128:
+            return self.page('activate', error='Link inválido ou expirado. Solicite um novo cadastro.'), 400
+        digest = hashlib.sha256(token.encode()).hexdigest()
+        with self.store.connect() as db:
+            pending = self.pending_registration(db, digest)
+        if not pending:
+            return self.page('activate', error='Link inválido ou expirado. Solicite um novo cadastro.'), 400
+        password = request.form.get('password', '')
+        if password != request.form.get('confirmation'):
+            return self.page('activate', token=token, error='As senhas digitadas são diferentes.'), 400
+        try:
+            hashed = password_hash(password)
+        except ValueError as exc:
+            return self.page('activate', token=token, error=str(exc)), 400
+        with self.store.connect(write=True) as db:
+            pending = self.pending_registration(db, digest)
+            if not pending:
+                return self.page('activate', error='Link inválido ou expirado. Solicite um novo cadastro.'), 400
+            inserted = db.execute('INSERT INTO users(email,password) VALUES (?,?) ON CONFLICT(email) DO NOTHING',
+                                  (pending['email'], hashed))
+            db.execute('DELETE FROM account_registrations WHERE digest=?', (digest,))
+            if inserted.rowcount != 1:
+                return self.page('activate', error='Link inválido ou expirado. Solicite um novo cadastro.'), 400
+        session.clear()
+        session.update(uid=inserted.lastrowid, epoch=0, permanent=True)
+        return redirect(self.app.config.get('ACCOUNT_HOME', '/'), code=303)
+
+    @staticmethod
+    def pending_registration(db, digest):
+        return db.execute('SELECT email FROM account_registrations WHERE digest=? AND expires>?',
+                          (digest, int(time.time()))).fetchone()
 
     def logout(self):
         session.clear()

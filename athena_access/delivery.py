@@ -5,7 +5,7 @@ from email.message import EmailMessage
 from urllib.parse import urlsplit
 
 
-def smtp_delivery(config):
+def smtp_delivery(config, *, registration=False):
     origin = config['ATHENA_PUBLIC_ORIGIN'].rstrip('/')
     parsed = urlsplit(origin)
     if (parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password
@@ -19,8 +19,13 @@ def smtp_delivery(config):
         message = EmailMessage()
         message['From'] = sender
         message['To'] = email
-        message['Subject'] = 'Recuperação de senha'
-        message.set_content(f'Para definir uma nova senha, abra o link em até 30 minutos:\n{origin}{path}\n')
+        if registration:
+            message['Subject'] = 'Confirme seu cadastro'
+            purpose = 'Para concluir o cadastro e definir sua senha'
+        else:
+            message['Subject'] = 'Recuperação de senha'
+            purpose = 'Para definir uma nova senha'
+        message.set_content(f'{purpose}, abra o link em até 30 minutos:\n{origin}{path}\n')
         context = ssl.create_default_context()
         factory = smtplib.SMTP_SSL if port == 465 else smtplib.SMTP
         options = {'context': context} if port == 465 else {}

@@ -1,32 +1,64 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Acesso · {{ config.get('ACCOUNT_BRAND', 'Portal') }}</title>
-<style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#101827;color:#edf4fc}
-body{margin:0;min-height:100vh;display:grid;place-items:center;padding:1.25rem;box-sizing:border-box}
-main{width:min(100%,26rem);padding:2rem;box-sizing:border-box;background:#172235;border:1px solid #344b67;border-radius:14px}
-label,input,button{display:block;width:100%;box-sizing:border-box}label{margin:.85rem 0 .4rem}input,button{padding:.75rem;border-radius:6px;font:inherit}
-input{border:1px solid #607997;background:#101827}button{margin:1rem 0;border:0;background:#82d9ff;color:#122034;font-weight:700}
-a{color:#94dfff}small{color:#adbed2}.error{color:#ffb7bd}
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% set titles = {'login':'Entrar','register':'Crie sua conta','activate':'Defina sua senha','forgot':'Recuperar senha','reset':'Definir nova senha'} %}
+{% set actions = {'login':'Entrar','register':'Enviar link de cadastro','activate':'Criar conta','forgot':'Enviar link','reset':'Salvar senha'} %}
+{% set brand = config.get('ACCOUNT_BRAND', 'Portal') %}
+<title>{{ titles[mode] }} · {{ brand }}</title>
+<link rel="stylesheet" href="{{ url_for('accounts.static', filename='account.css') }}">
 </head>
-<body><main>
-<small>{{ config.get('ACCOUNT_BRAND', 'Portal') }}</small>
-<h1>{{ {'login':'Entrar','forgot':'Recuperar senha','reset':'Definir nova senha'}[mode] }}</h1>
-{% if message %}<p role="status">{{ message }}</p>{% endif %}
-{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-{% if mode != 'reset' or token or not error %}
-<form method="post" action="{{ url_for('accounts.' + mode) }}">
-<input type="hidden" name="csrf" value="{{ csrf_token() }}">
-{% if mode != 'reset' %}<label for="email">E-mail</label><input id="email" name="email" type="email" maxlength="254" autocomplete="username" required>{% endif %}
-{% if mode == 'reset' %}<input type="hidden" id="resetToken" name="token" value="{{ token|default('') }}">{% endif %}
-{% if mode != 'forgot' %}<label for="password">Senha</label><input id="password" name="password" type="password" maxlength="256" autocomplete="{{ 'new-password' if mode=='reset' else 'current-password' }}" required>{% endif %}
-{% if mode == 'reset' %}<label for="confirmation">Confirmar senha</label><input id="confirmation" name="confirmation" type="password" maxlength="256" autocomplete="new-password" required>{% endif %}
-<button>{{ {'login':'Entrar','forgot':'Enviar link','reset':'Salvar senha'}[mode] }}</button>
-</form>
-{% endif %}
-<a href="{{ url_for('accounts.forgot' if mode=='login' else 'accounts.login') }}">{{ 'Esqueci minha senha' if mode=='login' else 'Voltar ao login' }}</a>
-{% if mode == 'reset' %}<script src="{{ url_for('accounts.static',filename='reset.js') }}" defer></script>{% endif %}
-</main></body></html>
+<body>
+<main class="access">
+  <header class="identity">
+    {% if config.get('ACCOUNT_LOGO') %}
+    <img class="identity-logo" src="{{ url_for('static', filename=config['ACCOUNT_LOGO']) }}" alt="{{ brand }}">
+    {% else %}
+    <span class="identity-name">{{ brand }}</span>
+    {% endif %}
+  </header>
+  <section class="account-card" aria-labelledby="account-title">
+    <h1 id="account-title">{{ titles[mode] }}</h1>
+    {% if mode == 'register' %}
+    <p class="intro">Confirme seu e-mail para definir sua senha.</p>
+    {% elif mode == 'forgot' %}
+    <p class="intro">Informe o e-mail da sua conta para receber um link de recuperação.</p>
+    {% endif %}
+    {% if message %}<p class="feedback" role="status">{{ message }}</p>{% endif %}
+    {% if error %}<p class="feedback error" role="alert">{{ error }}</p>{% endif %}
+    {% set token_mode = mode in ('reset', 'activate') %}
+    {% if not token_mode or token or not error %}
+    <form method="post" action="{{ url_for('accounts.' + mode) }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      {% if token_mode %}
+      <input type="hidden" id="resetToken" name="token" value="{{ token|default('') }}">
+      {% else %}
+      <label for="email">E-mail</label>
+      <input id="email" name="email" type="email" value="{{ email|default('') }}" maxlength="254" autocomplete="username" required>
+      {% endif %}
+      {% if mode == 'login' or token_mode %}
+      <div class="label-row">
+        <label for="password">Senha</label>
+        {% if mode == 'login' %}<a href="{{ url_for('accounts.forgot') }}">Esqueci minha senha</a>{% endif %}
+      </div>
+      <input id="password" name="password" type="password" maxlength="256" autocomplete="{{ 'new-password' if token_mode else 'current-password' }}" {% if token_mode %}minlength="12" aria-describedby="password-help"{% endif %} required>
+      {% endif %}
+      {% if token_mode %}
+      <small id="password-help">Use pelo menos 12 caracteres.</small>
+      <label for="confirmation">Confirmar senha</label>
+      <input id="confirmation" name="confirmation" type="password" minlength="12" maxlength="256" autocomplete="new-password" required>
+      {% endif %}
+      <button type="submit">{{ actions[mode] }}</button>
+    </form>
+    {% endif %}
+    {% if mode == 'login' and registration_enabled %}
+    <footer>Primeiro acesso? <a href="{{ url_for('accounts.register') }}">Criar conta</a></footer>
+    {% elif mode != 'login' %}
+    <footer><a href="{{ url_for('accounts.register' if mode == 'activate' and error and not token else 'accounts.login') }}">{{ 'Solicitar novo link' if mode == 'activate' and error and not token else 'Voltar ao login' }}</a></footer>
+    {% endif %}
+  </section>
+</main>
+{% if token_mode %}<script src="{{ url_for('accounts.static',filename='reset.js') }}" defer></script>{% endif %}
+</body>
+</html>

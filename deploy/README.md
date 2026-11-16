@@ -59,7 +59,8 @@ SQLite e começa com um espaço vazio. Importe os projetos que pretende publicar
    ./.venv/bin/python -m flask --app portal access user responsavel@exemplo.com
    ```
 
-   Abra o domínio HTTPS e entre com a conta criada. Teste a recuperação
+   Abra o domínio HTTPS e entre com a conta criada. O primeiro acesso pela
+   opção **Criar conta** depende do SMTP para confirmar o e-mail. Teste o cadastro e a recuperação
    com um endereço que você controla e verifique o recebimento antes de
    convidar outras pessoas.
 

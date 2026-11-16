@@ -1,0 +1,47 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  color: #e0ecf9;
+  background: #0c1322;
+  --surface: #111d30;
+  --line: #344e68;
+  --subtle: #a8bed7;
+  --accent: #7ad7ff;
+}
+* { box-sizing: border-box; }
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  margin: 0;
+  padding: 1.5rem;
+  background: radial-gradient(ellipse at 50% 8%, #173957 0, #0c1322 58%);
+}
+.access { width: min(100%, 27rem); }
+.identity { text-align: center; margin-bottom: 1.2rem; }
+.identity-logo { display: block; width: min(100%, 18rem); height: auto; margin: 0 auto; }
+.identity-name { font-size: 1.65rem; font-weight: 750; }
+.account-card {
+  padding: clamp(1.25rem, 5vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: 0 1.25rem 3rem #080e1b80;
+}
+h1 { margin: 0 0 1.2rem; font-size: clamp(1.45rem, 5vw, 1.8rem); letter-spacing: -.025em; }
+.intro, footer, small { color: var(--subtle); line-height: 1.5; }
+.intro { margin: -.65rem 0 1.15rem; }
+label { display: block; margin: 1rem 0 .4rem; font-weight: 600; font-size: .9rem; }
+.label-row { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+input:not([type=hidden]), button { display: block; width: 100%; padding: .72rem .8rem; border-radius: .5rem; font: inherit; }
+input:not([type=hidden]) { border: 1px solid var(--line); color: inherit; background: #0c1729; }
+button { margin-top: 1.2rem; color: #fff; background: #176b9d; border: 1px solid #3089b7; font-weight: 700; cursor: pointer; }
+button:hover { background: #1a78ad; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+a { color: var(--accent); text-underline-offset: .18em; font-size: .9rem; }
+small { display: block; margin-top: .4rem; }
+footer { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line); text-align: center; font-size: .9rem; }
+.feedback { padding: .7rem .85rem; border: 1px solid #37658a; border-radius: .5rem; color: #bde8fc; line-height: 1.45; }
+.feedback.error { color: #ffd1d5; border-color: #9f5969; }

@@ -343,7 +343,7 @@ def render_graphviz():
 @app.errorhandler(413)
 def error(e): return jsonify({'error':getattr(e,'description',str(e))}),e.code
 
-def configure_hosted(config, *, reset_sender=None):
+def configure_hosted(config, *, reset_sender=None, registration_sender=None):
     """Enable the hosted mode once, before Flask starts serving requests."""
     global studio
     from athena_access import AccessStore, Accounts
@@ -352,15 +352,20 @@ def configure_hosted(config, *, reset_sender=None):
     from athena_access.studio import StudioProjects
 
     app.secret_key = config['ATHENA_SECRET_KEY']
-    app.config.update(SESSION_COOKIE_SECURE=True, ACCOUNT_BRAND='Athena GraphKit')
+    app.config.update(SESSION_COOKIE_SECURE=True, ACCOUNT_BRAND='Athena GraphKit',
+                      ACCOUNT_LOGO='branding/athena-logo-dark.png')
     if config.get('ATHENA_TRUSTED_HOST'):
         app.config['TRUSTED_HOSTS'] = [config['ATHENA_TRUSTED_HOST']]
     database = Path(config['ATHENA_DATABASE'])
     if not database.is_absolute():
         raise ValueError('ATHENA_DATABASE precisa indicar um caminho absoluto persistente.')
     store = AccessStore(database)
+    if config.get('ATHENA_ALLOW_REGISTRATION', True) is False:
+        registration_sender = None
+    elif registration_sender is None and reset_sender is None:
+        registration_sender = smtp_delivery(config, registration=True)
     Accounts(app, store, reset_sender if reset_sender is not None else smtp_delivery(config),
-             public_endpoints={'health'})
+             send_registration=registration_sender, public_endpoints={'health'})
     studio = StudioProjects(app, store, validate_project, slug)
     install_commands(app, store, studio)
     return app
