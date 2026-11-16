@@ -1,12 +1,13 @@
 # Athena GraphKit no PythonAnywhere
 
-A publicação usa o modo hospedado com login. O modo portátil continua ouvindo
-apenas na interface local e mantém os projetos em JSON. O hospedado usa
-SQLite e começa com um espaço vazio. Importe os projetos que pretende publicar.
+A publicação usa o modo hospedado com login e SQLite. A execução local
+ou portátil também usa login e mantém um SQLite próprio. Importe os
+projetos JSON anteriores pelo Studio.
 
 ## Instalação inicial
 
-1. No GitHub, use a branch `main`. No PythonAnywhere, crie uma aplicação
+1. Publique a revisão estável aprovada na branch `producao` no GitHub.
+   No PythonAnywhere, crie uma aplicação
    **Manual configuration** na aba **Web** e selecione Python 3.12.
    Anote o caminho exato do arquivo WSGI que a aba mostra. Nos exemplos,
    substitua `SEU_USUARIO` pelo usuário real. Para Git e PythonAnywhere EU,
@@ -15,7 +16,7 @@ SQLite e começa com um espaço vazio. Importe os projetos que pretende publicar
 
    ```bash
    cd "$HOME"
-   git clone https://github.com/ChristopherNicolasSMM/Athena-GraphKit.git
+   git clone --branch producao https://github.com/ChristopherNicolasSMM/Athena-GraphKit.git
    umask 077
    mkdir -p "$HOME/athena-deploy/data"
    cp "$HOME/Athena-GraphKit/deploy/app.example.json" "$HOME/athena-deploy/app.json"
@@ -48,6 +49,7 @@ SQLite e começa com um espaço vazio. Importe os projetos que pretende publicar
    python3.12 "$HOME/Athena-GraphKit/deploy/update.py" \
      --repo "$HOME/Athena-GraphKit" \
      --base "$HOME/athena-deploy" \
+     --branch producao \
      --wsgi /var/www/SEU_USUARIO_pythonanywhere_com_wsgi.py
    ```
 
@@ -72,7 +74,7 @@ A Always-on task, disponível em contas pagas, mantém o processo que
 faz as verificações de dez em dez minutos.
 
 ```text
-python3.12 /home/SEU_USUARIO/Athena-GraphKit/deploy/update.py --repo /home/SEU_USUARIO/Athena-GraphKit --base /home/SEU_USUARIO/athena-deploy --wsgi /var/www/SEU_USUARIO_pythonanywhere_com_wsgi.py --watch
+python3.12 /home/SEU_USUARIO/Athena-GraphKit/deploy/update.py --repo /home/SEU_USUARIO/Athena-GraphKit --base /home/SEU_USUARIO/athena-deploy --wsgi /var/www/SEU_USUARIO_pythonanywhere_com_wsgi.py --branch producao --watch
 ```
 
 A checagem usa `git fetch`, aceita avanço direto da branch com
@@ -98,9 +100,29 @@ As pastas `releases/` e `venvs/` conservam versões anteriores.
 Remova revisões antigas apenas depois de confirmar a versão ativa
 e preservar a revisão anterior.
 
-Se já publicou uma revisão anterior, faça `git pull --ff-only`, atualize o
-conteúdo do WSGI e reinicie a Always-on task uma vez para carregar o novo
-atualizador. O SQLite e o `app.json` continuam nos caminhos existentes.
+## Migrar um checkout de publicação existente
+
+Pause a Always-on task e confirme que o checkout de publicação está limpo.
+Execute na Bash Console:
+
+```bash
+cd "$HOME/Athena-GraphKit"
+git status --short
+git fetch origin refs/heads/producao:refs/remotes/origin/producao
+git switch producao
+git branch --set-upstream-to=origin/producao producao
+```
+
+Execute a publicação manual do passo 4 e altere o comando da Always-on task
+para usar `--branch producao` antes de iniciá-la novamente. O atualizador lê
+a branch do parâmetro `--branch` e usa `main` se ele for omitido. O
+`app.json` contém a configuração da aplicação. Confirme a revisão em
+`readlink "$HOME/athena-deploy/current"` e consulte `deploy.log` se a branch
+local estiver incorreta, tiver alterações ou divergir do remoto.
+
+Quando `requirements.txt` muda, o runtime prepara outro venv. A dependência
+`markdown-it-py` dos manuais é instalada nesse processo. Se continuar usando
+um WSGI de uma instalação anterior, compare-o com `deploy/wsgi.py`.
 
 Referências do provedor ([recarga WSGI](https://help.pythonanywhere.com/pages/ReloadWebApp/),
 [Always-on tasks](https://help.pythonanywhere.com/pages/AlwaysOnTasks/) e

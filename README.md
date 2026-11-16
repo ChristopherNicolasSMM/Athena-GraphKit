@@ -258,6 +258,8 @@ Abra **Manuais** no cabeçalho do portal ou consulte diretamente os arquivos da 
 
 **Documentação oficial:** [Markdown Guide](https://www.markdownguide.org/) · [Mermaid](https://mermaid.js.org/) · [Mermaid Live](https://mermaid.live/) · [Graphviz DOT](https://graphviz.org/doc/info/lang.html) · [Graphviz Attributes](https://graphviz.org/doc/info/attrs.html) · [Python Graphviz](https://graphviz.readthedocs.io/) · [Flask](https://flask.palletsprojects.com/) · [BPMN 2.0](https://www.omg.org/spec/BPMN/2.0.2/)
 
+A [referência técnica do Studio](docs/TECHNICAL.md) descreve a persistência do layout, a API e a renderização dos manuais.
+
 ## Testes e diagnóstico
 
 ```powershell
