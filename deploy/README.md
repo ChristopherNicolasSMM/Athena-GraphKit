@@ -25,7 +25,7 @@ SQLite e começa com um espaço vazio. Importe os projetos que pretende publicar
    ```
 
    Edite `app.json` com a chave gerada, o domínio HTTPS, a rota absoluta
-   do SQLite e os dados SMTP. Use o domínio sem barra em
+   do SQLite e, se disponível, os dados SMTP. Use o domínio sem barra em
    `ATHENA_TRUSTED_HOST`. O envio requer um SMTP alcançável pela conta
    PythonAnywhere e TLS. A porta 465 usa TLS desde a conexão. A 587 usa
    STARTTLS. Se a sua conta restringir o SMTP ou a saída de rede, escolha
@@ -59,10 +59,10 @@ SQLite e começa com um espaço vazio. Importe os projetos que pretende publicar
    ./.venv/bin/python -m flask --app portal access user responsavel@exemplo.com
    ```
 
-   Abra o domínio HTTPS e entre com a conta criada. O primeiro acesso pela
-   opção **Criar conta** depende do SMTP para confirmar o e-mail. Teste o cadastro e a recuperação
-   com um endereço que você controla e verifique o recebimento antes de
-   convidar outras pessoas.
+   Abra o domínio HTTPS. Você pode entrar com a conta criada no terminal
+   ou usar **Criar conta** para fazer o primeiro acesso no site. O cadastro
+   direto funciona sem SMTP. Se habilitar o envio, teste a recuperação com um
+   endereço que você controla.
 
 ## Atualização a cada dez minutos
 

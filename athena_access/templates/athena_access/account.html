@@ -28,14 +28,15 @@
   <section class="account-card" aria-labelledby="account-title">
     <h1 id="account-title">{{ t(titles[mode]) }}</h1>
     {% if mode == 'register' %}
-    <p class="intro">{{ t('Confirme seu e-mail para definir sua senha.') }}</p>
-    {% elif mode == 'forgot' %}
+    {% if not on_site_registration %}<p class="intro">{{ t('Confirme seu e-mail para definir sua senha.') }}</p>{% endif %}
+    {% elif mode == 'forgot' and recovery_enabled %}
     <p class="intro">{{ t('Informe o e-mail da sua conta para receber um link de recuperação.') }}</p>
     {% endif %}
     {% if message %}<p class="feedback" role="status">{{ t(message) }}</p>{% endif %}
     {% if error %}<p class="feedback error" role="alert">{{ t(error) }}</p>{% endif %}
     {% set token_mode = mode in ('reset', 'activate') %}
-    {% if not token_mode or token or not error %}
+    {% set new_password = token_mode or (mode == 'register' and on_site_registration) %}
+    {% if (not token_mode or token or not error) and (mode != 'forgot' or recovery_enabled) %}
     <form method="post" action="{{ url_for('accounts.' + mode) }}">
       <input type="hidden" name="csrf" value="{{ csrf_token() }}">
       {% if token_mode %}
@@ -44,19 +45,19 @@
       <label for="email">{{ t('E-mail') }}</label>
       <input id="email" name="email" type="email" value="{{ email|default('') }}" maxlength="254" autocomplete="username" required>
       {% endif %}
-      {% if mode == 'login' or token_mode %}
+      {% if mode == 'login' or new_password %}
       <div class="label-row">
         <label for="password">{{ t('Senha') }}</label>
         {% if mode == 'login' %}<a href="{{ url_for('accounts.forgot') }}">{{ t('Esqueci minha senha') }}</a>{% endif %}
       </div>
-      <input id="password" name="password" type="password" maxlength="256" autocomplete="{{ 'new-password' if token_mode else 'current-password' }}" {% if token_mode %}minlength="12" aria-describedby="password-help"{% endif %} required>
+      <input id="password" name="password" type="password" maxlength="256" autocomplete="{{ 'new-password' if new_password else 'current-password' }}" {% if new_password %}minlength="12" aria-describedby="password-help"{% endif %} required>
       {% endif %}
-      {% if token_mode %}
+      {% if new_password %}
       <small id="password-help">{{ t('Use pelo menos 12 caracteres.') }}</small>
       <label for="confirmation">{{ t('Confirmar senha') }}</label>
       <input id="confirmation" name="confirmation" type="password" minlength="12" maxlength="256" autocomplete="new-password" required>
       {% endif %}
-      <button type="submit">{{ t(actions[mode]) }}</button>
+      <button type="submit">{{ t('Criar conta' if mode == 'register' and on_site_registration else actions[mode]) }}</button>
     </form>
     {% endif %}
     {% if mode == 'login' and registration_enabled %}

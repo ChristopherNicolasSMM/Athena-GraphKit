@@ -15,13 +15,7 @@ class HostedAccessTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.outbox = []
         self.registrations = []
-        module = runpy.run_path(str(Path(__file__).resolve().parents[1] / 'portal.py'))
-        self.app = module['configure_hosted']({
-            'ATHENA_SECRET_KEY': 'testing-key-only-' * 4,
-            'ATHENA_DATABASE': Path(self.directory.name) / 'test.sqlite3',
-        }, reset_sender=lambda *message: self.outbox.append(message),
-           registration_sender=lambda *message: self.registrations.append(message))
-        self.app.testing = True
+        self.configure()
         self.password = 'original password with spaces'
         from athena_access import AccessStore
         self.store = AccessStore(Path(self.directory.name) / 'test.sqlite3')
@@ -34,6 +28,16 @@ class HostedAccessTests(unittest.TestCase):
             db.execute("INSERT INTO organization_members VALUES ('org',2)")
             db.execute("INSERT INTO group_members VALUES ('dev',2)")
         self.owner, self.member, self.other = (self.app.test_client() for _ in range(3))
+
+    def configure(self, *, verify=False, recovery=True):
+        module = runpy.run_path(str(Path(__file__).resolve().parents[1] / 'portal.py'))
+        self.app = module['configure_hosted']({
+            'ATHENA_SECRET_KEY': 'testing-key-only-' * 4,
+            'ATHENA_VERIFY_REGISTRATION_BY_EMAIL': verify,
+            'ATHENA_DATABASE': Path(self.directory.name) / 'test.sqlite3',
+        }, reset_sender=(lambda *message: self.outbox.append(message)) if recovery else None,
+           registration_sender=lambda *message: self.registrations.append(message))
+        self.app.testing = True
 
     @staticmethod
     def request(client, path, *, method='GET', **kwargs):
@@ -68,7 +72,28 @@ class HostedAccessTests(unittest.TestCase):
         self.assertIn(b'<html lang="pt-BR">', response.data)
         self.assertIn(b'Criar conta', self.request(self.other, '/conta/login').data)
 
+    def test_on_site_registration_needs_no_smtp(self):
+        self.configure(recovery=False)
+        self.owner, self.other = (self.app.test_client() for _ in range(2))
+        path = '/conta/cadastro'
+        form = {'csrf': self.csrf(self.other, path), 'email': 'nova@example.test',
+                'password': 'senha para criar conta', 'confirmation': 'senha para criar conta'}
+        self.assertEqual(self.request(self.other, path, method='POST', data=form).status_code, 303)
+        self.assertEqual(self.request(self.other, '/api/projects').get_json(), {'projects': []})
+        self.assertEqual(self.registrations, [])
+        self.assertIn('ainda não está disponível', self.request(self.other, '/conta/recuperar').text)
+        self.assertEqual(self.login(self.owner, 'owner').status_code, 302)
+        self.assertEqual(self.mutate(self.owner, '/api/projects', json={'id':'projeto'}).status_code, 201)
+        self.assertEqual(self.request(self.other, '/api/projects/projeto').status_code, 404)
+        self.assertEqual(self.grant('user', 'nova@example.test', 'visualizar').status_code, 400)
+        result = self.app.test_cli_runner().invoke(args=['access','verify-email','nova@example.test'])
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(self.grant('user', 'nova@example.test', 'visualizar').status_code, 302)
+        self.assertEqual(self.request(self.other, '/api/projects/projeto').status_code, 200)
+
     def test_registration_confirms_email_and_creates_an_isolated_account(self):
+        self.configure(verify=True)
+        self.owner, self.other, self.member = (self.app.test_client() for _ in range(3))
         self.assertEqual(self.login(self.owner, 'owner').status_code, 302)
         self.assertEqual(self.mutate(self.owner, '/api/projects', json={'id':'privado'}).status_code, 201)
         path = '/conta/cadastro'

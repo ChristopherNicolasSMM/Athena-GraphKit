@@ -6,7 +6,8 @@ from pathlib import Path
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL,
-    enabled INTEGER NOT NULL DEFAULT 1, epoch INTEGER NOT NULL DEFAULT 0
+    enabled INTEGER NOT NULL DEFAULT 1, epoch INTEGER NOT NULL DEFAULT 0,
+    email_verified INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS organizations (id TEXT PRIMARY KEY, name TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS groups (
@@ -55,6 +56,11 @@ class AccessStore:
         self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         with self.connect() as db:
             db.executescript(SCHEMA)
+        with self.connect(write=True) as db:
+            columns = {column['name'] for column in db.execute('PRAGMA table_info(users)')}
+            if 'email_verified' not in columns:
+                # Existing accounts were created by the operator or by email activation.
+                db.execute('ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1')
 
     @contextmanager
     def connect(self, *, write=False):

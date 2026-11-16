@@ -1,4 +1,4 @@
-"""Operator commands. Registration is controlled by the application operator."""
+"""Operator commands for accounts and memberships."""
 import json
 import re
 import sqlite3
@@ -40,6 +40,15 @@ def install_commands(app, store, studio):
         except (ValueError, sqlite3.IntegrityError) as exc:
             raise click.ClickException('Conta já cadastrada ou senha fora do intervalo de 12 a 256 caracteres.') from exc
         click.echo('Conta criada.')
+
+    @access.command('verify-email')
+    @click.argument('email')
+    def verify_email(email):
+        """Mark an email as verified after confirming ownership."""
+        with store.connect(write=True) as db:
+            uid = identify(db, email)
+            db.execute('UPDATE users SET email_verified=1 WHERE id=?', (uid,))
+        click.echo('E-mail marcado como confirmado.')
 
     @access.command('disable')
     @click.argument('email')

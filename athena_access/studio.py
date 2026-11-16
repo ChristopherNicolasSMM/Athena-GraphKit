@@ -151,12 +151,13 @@ class StudioProjects:
     @staticmethod
     def identity(db, principal, value):
         if principal == 'user':
-            row = db.execute('SELECT id FROM users WHERE email=? AND enabled=1',
+            row = db.execute('SELECT id FROM users WHERE email=? AND enabled=1 AND email_verified=1',
                              (value.lower(),)).fetchone()
         else:
             row = db.execute(f'SELECT id FROM {PRINCIPALS[principal]} WHERE id=?', (value,)).fetchone()
         if not row:
-            abort(400, 'Destinatário não encontrado.')
+            message = 'Informe o e-mail confirmado de uma conta ativa.' if principal == 'user' else 'Destinatário não encontrado.'
+            abort(400, message)
         return str(row['id'])
 
     def permissions(self, pid):

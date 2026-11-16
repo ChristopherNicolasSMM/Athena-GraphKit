@@ -12,6 +12,8 @@ ENGLISH = {
     'Salvar senha': 'Save password',
     'Confirme seu e-mail para definir sua senha.': 'Confirm your email address to set your password.',
     'Informe o e-mail da sua conta para receber um link de recuperação.': 'Enter your account email to receive a reset link.',
+    'Não foi possível criar a conta com este e-mail.': 'An account could not be created with this email address.',
+    'A recuperação por e-mail ainda não está disponível.': 'Password recovery by email is not available yet.',
     'E-mail': 'Email',
     'Senha': 'Password',
     'Esqueci minha senha': 'Forgot password?',

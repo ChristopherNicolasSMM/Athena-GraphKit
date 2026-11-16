@@ -21,17 +21,23 @@ def password_hash(password):
 
 
 class Accounts:
-    def __init__(self, app, store, send_reset, *, send_registration=None, public_endpoints=()):
+    def __init__(self, app, store, send_reset, *, send_registration=None, on_site_registration=False, public_endpoints=()):
         self.app = app
         self.store = store
         self.send_reset = send_reset
         self.send_registration = send_registration
+        self.on_site_registration = on_site_registration
         self.public_endpoints = {'static', 'accounts.static', *public_endpoints}
         if not app.secret_key or len(app.secret_key) < 32:
             raise ValueError('Configure uma chave de sessão de pelo menos 32 caracteres.')
         app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax',
                           PERMANENT_SESSION_LIFETIME=timedelta(hours=12))
-        app.context_processor(lambda: {'csrf_token': self.csrf_token, 'registration_enabled': send_registration is not None})
+        app.context_processor(lambda: {
+            'csrf_token': self.csrf_token,
+            'registration_enabled': on_site_registration or send_registration is not None,
+            'on_site_registration': on_site_registration,
+            'recovery_enabled': send_reset is not None,
+        })
         app.before_request(self.protect)
         app.after_request(self.private_response)
         bp = Blueprint('accounts', __name__, template_folder='templates', static_folder='static', url_prefix='/conta')
@@ -39,8 +45,9 @@ class Accounts:
         bp.add_url_rule('/sair', 'logout', self.logout, methods=['POST'])
         bp.add_url_rule('/recuperar', 'forgot', self.forgot, methods=['GET', 'POST'])
         bp.add_url_rule('/redefinir', 'reset', self.reset, methods=['GET', 'POST'])
-        if self.send_registration is not None:
+        if self.on_site_registration or self.send_registration is not None:
             bp.add_url_rule('/cadastro', 'register', self.register, methods=['GET', 'POST'])
+        if self.send_registration is not None:
             bp.add_url_rule('/ativar', 'activate', self.activate, methods=['GET', 'POST'])
         app.register_blueprint(bp)
 
@@ -140,6 +147,8 @@ class Accounts:
         email = request.form.get('email', '').strip().lower()
         if len(email) > 254 or not re.fullmatch(r'[^@\s]{1,100}@[^@\s.]+(?:\.[^@\s.]+)+', email):
             return self.page('register', email=email, error='Informe um e-mail válido.'), 400
+        if self.on_site_registration:
+            return self.register_on_site(email)
         if self.allowed('register', email, limit=3, ip_limit=20):
             token = secrets.token_urlsafe(32)
             digest = hashlib.sha256(token.encode()).hexdigest()
@@ -157,6 +166,28 @@ class Accounts:
                 except Exception:
                     self.app.logger.error('Falha na entrega de e-mail de cadastro.')
         return self.page('register', message='Se o endereço puder ser cadastrado, você receberá um link para definir sua senha.')
+
+    def register_on_site(self, email):
+        if not self.allowed('register', email, limit=8, ip_limit=30):
+            return self.page('register', email=email, error='Muitas tentativas. Aguarde e tente novamente.'), 429
+        password = request.form.get('password', '')
+        if password != request.form.get('confirmation'):
+            return self.page('register', email=email, error='As senhas digitadas são diferentes.'), 400
+        try:
+            hashed = password_hash(password)
+        except ValueError as exc:
+            return self.page('register', email=email, error=str(exc)), 400
+        with self.store.connect(write=True) as db:
+            inserted = db.execute(
+                'INSERT INTO users(email,password,email_verified) VALUES (?,?,0) ON CONFLICT(email) DO NOTHING',
+                (email, hashed),
+            )
+            if inserted.rowcount != 1:
+                return self.page('register', email=email, error='Não foi possível criar a conta com este e-mail.'), 400
+            uid = inserted.lastrowid
+        session.clear()
+        session.update(uid=uid, epoch=0, permanent=True)
+        return redirect(self.app.config.get('ACCOUNT_HOME', '/'), code=303)
 
     def activate(self):
         if g.identity:
@@ -201,6 +232,8 @@ class Accounts:
         return redirect(url_for('accounts.login'))
 
     def forgot(self):
+        if self.send_reset is None:
+            return self.page('forgot', message='A recuperação por e-mail ainda não está disponível.')
         if request.method == 'GET':
             return self.page('forgot')
         email = request.form.get('email', '').strip().lower()[:254]
@@ -208,7 +241,7 @@ class Accounts:
             token = secrets.token_urlsafe(32)
             digest = hashlib.sha256(token.encode()).hexdigest()
             with self.store.connect(write=True) as db:
-                user = db.execute('SELECT id FROM users WHERE email=? AND enabled=1', (email,)).fetchone()
+                user = db.execute('SELECT id FROM users WHERE email=? AND enabled=1 AND email_verified=1', (email,)).fetchone()
                 if user:
                     db.execute('DELETE FROM password_resets WHERE user=? OR expires<=?',
                                (user['id'], int(time.time())))

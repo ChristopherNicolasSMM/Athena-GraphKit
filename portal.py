@@ -360,12 +360,20 @@ def configure_hosted(config, *, reset_sender=None, registration_sender=None):
     if not database.is_absolute():
         raise ValueError('ATHENA_DATABASE precisa indicar um caminho absoluto persistente.')
     store = AccessStore(database)
-    if config.get('ATHENA_ALLOW_REGISTRATION', True) is False:
+    smtp_host = config.get('ATHENA_SMTP_HOST', '').strip()
+    smtp_available = bool(smtp_host and smtp_host != 'smtp.seu-provedor.com' and config.get('ATHENA_SMTP_FROM'))
+    if reset_sender is None and smtp_available:
+        reset_sender = smtp_delivery(config)
+    allow_registration = config.get('ATHENA_ALLOW_REGISTRATION', True) is not False
+    verify_registration = config.get('ATHENA_VERIFY_REGISTRATION_BY_EMAIL', False) is True
+    if not (allow_registration and verify_registration):
         registration_sender = None
-    elif registration_sender is None and reset_sender is None:
+    elif registration_sender is None:
+        if not smtp_available:
+            raise ValueError('Configure o SMTP para exigir confirmação de e-mail no cadastro.')
         registration_sender = smtp_delivery(config, registration=True)
-    Accounts(app, store, reset_sender if reset_sender is not None else smtp_delivery(config),
-             send_registration=registration_sender, public_endpoints={'health'})
+    Accounts(app, store, reset_sender, send_registration=registration_sender,
+             on_site_registration=allow_registration and not verify_registration, public_endpoints={'health'})
     studio = StudioProjects(app, store, validate_project, slug)
     install_commands(app, store, studio)
     return app
