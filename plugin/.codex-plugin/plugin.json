@@ -1,8 +1,39 @@
 {
   "name": "athena-graphkit",
   "version": "1.4.4",
-  "description": "Athena GraphKit - Engineering diagrams, documentation and AI guidance.",
-  "author": "Christopher N. S. M. Mauricio",
-  "icon": "assets/icon.png",
-  "logo": "assets/logo.png"
+  "description": "Skills para diagramas de engenharia, orientacao de usuarios, arquitetura e operacao do Athena GraphKit.",
+  "author": {
+    "name": "Christopher N. S. M. Mauricio"
+  },
+  "homepage": "https://github.com/ChristopherNicolasSMM/Athena-GraphKit",
+  "repository": "https://github.com/ChristopherNicolasSMM/Athena-GraphKit",
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Athena GraphKit",
+    "shortDescription": "Diagramas e engenharia",
+    "longDescription": "Oriente o uso do Athena GraphKit Studio, compreenda sua arquitetura, diagnostique instalacoes e gere diagramas e documentacao com os recursos fornecidos. As Skills sao orientacoes; nao conectam automaticamente um servidor MCP ou uma instalacao remota do Athena. Alteracoes no codigo exigem proposta e aprovacao do arquiteto.",
+    "developerName": "Christopher N. S. M. Mauricio",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Gerar diagramas compatíveis",
+      "Orientar usuários do Studio",
+      "Documentar a arquitetura",
+      "Apoiar diagnósticos"
+    ],
+    "websiteURL": "https://github.com/ChristopherNicolasSMM/Athena-GraphKit",
+    "supportURL": "https://github.com/ChristopherNicolasSMM/Athena-GraphKit/issues",
+    "defaultPrompt": [
+      "Como criar um fluxograma no Athena GraphKit?",
+      "Explique a arquitetura e os módulos do Athena.",
+      "Como diagnosticar problemas na instalação do Athena?"
+    ],
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png"
+  },
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/athena-user/SKILL.md"
+    }
+  }
 }
