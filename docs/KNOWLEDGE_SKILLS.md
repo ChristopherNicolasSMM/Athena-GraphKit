@@ -28,3 +28,7 @@ O manifesto `plugin/plugin.json` declara as quatro Skills; `plugin/.codex-plugin
 3. Instruções de aprovação estão presentes no `AGENTS.md` e nas Skills de desenvolvimento e operações.
 4. Testes existentes de Python/JS passam, quando afetados.
 5. Links internos, versões e limitações MCP/Mermaid são revisados em cada release.
+
+## Ciclo de publicação
+
+A branch `desenvolvimento` recebe toda alteração aprovada. Após testes e aceite do arquiteto, uma versão estável pode ser promovida a `main`. A branch `producao` é atualizada somente mediante solicitação explícita de publicação, acionando o fluxo configurado do PythonAnywhere. Nunca interpretar aprovação de desenvolvimento como autorização de deploy.
